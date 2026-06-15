@@ -1,26 +1,65 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ==========================================================================
+   Garden Grow — Botanical Design System
+   Tailwind v4 (CSS-first). Tokens live here in @theme; no tailwind.config.
+   ========================================================================== */
+
+@theme {
+  /* ---- Brand: Greens ---- */
+  --color-garden: #2f6b3d; /* deep garden green — primary brand */
+  --color-leaf: #4a7c59; /* fresh leaf */
+  --color-leaf-bright: #6fa86b; /* fresh leaf, lighter */
+  --color-sage: #a9c4a0; /* sage — soft fills, borders */
+  --color-sage-soft: #d4e2cd; /* sage tint — subtle surfaces */
+
+  /* ---- Neutrals: earthy / cream ---- */
+  --color-cream: #f7f4ec; /* paper background */
+  --color-cream-deep: #efe9dc; /* card / raised surface */
+  --color-soil: #27201a; /* soil/ink — primary text */
+  --color-soil-soft: #5a5147; /* muted text */
+  --color-line: #e3dccc; /* hairline borders on cream */
+
+  /* ---- Accent: warm carrot / terracotta ---- */
+  --color-carrot: #e08a4b; /* warm accent — CTAs, highlights */
+  --color-carrot-deep: #c5713a; /* accent hover / active */
+
+  /* ---- Semantic aliases ---- */
+  --color-background: var(--color-cream);
+  --color-foreground: var(--color-soil);
+  --color-primary: var(--color-garden);
+  --color-accent: var(--color-carrot);
+
+  /* ---- Typography ---- */
+  --font-display: var(--font-display), ui-serif, Georgia, serif;
+  --font-body: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-body);
+
+  /* ---- Radius (rounded, friendly) ---- */
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* ---- Base styles ---- */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  color: var(--color-garden);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+a {
+  color: var(--color-leaf);
 }
