@@ -90,6 +90,12 @@ export function toggleGarden(id: string): boolean {
   return true;
 }
 
+/** Remove every plant from the garden. */
+export function clearGarden(): void {
+  if (getSaved().length === 0) return;
+  writeSaved([]);
+}
+
 /** Subscribe to garden changes. Returns an unsubscribe function. */
 export function subscribe(listener: Listener): () => void {
   listeners.add(listener);

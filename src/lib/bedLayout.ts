@@ -198,7 +198,48 @@ function verdictFor(areaUsedPct: number, overflow: number): BedVerdict {
  *
  * @returns a fully-populated BedLayout (never throws).
  */
-export function layoutBed(dims: BedDims, items: BedItem[]): BedLayout {
+/**
+ * 2-color the foe graph so companion foes end up on opposite sides of the bed.
+ * Bipartite BFS over the given plant ids; plants with no foe edge default to
+ * camp 0. Odd cycles (non-bipartite) are handled best-effort.
+ */
+function computeFoeCamps(
+  plantIds: string[],
+  foePairs: ReadonlyArray<readonly [string, string]>,
+): Map<string, number> {
+  const ids = [...new Set(plantIds)];
+  const adj = new Map<string, Set<string>>();
+  for (const id of ids) adj.set(id, new Set());
+  for (const [a, b] of foePairs) {
+    if (adj.has(a) && adj.has(b)) {
+      adj.get(a)!.add(b);
+      adj.get(b)!.add(a);
+    }
+  }
+  const camp = new Map<string, number>();
+  for (const start of ids) {
+    if (camp.has(start)) continue;
+    camp.set(start, 0);
+    const queue: string[] = [start];
+    while (queue.length > 0) {
+      const cur = queue.shift()!;
+      const cc = camp.get(cur)!;
+      for (const nb of adj.get(cur)!) {
+        if (!camp.has(nb)) {
+          camp.set(nb, cc === 0 ? 1 : 0);
+          queue.push(nb);
+        }
+      }
+    }
+  }
+  return camp;
+}
+
+export function layoutBed(
+  dims: BedDims,
+  items: BedItem[],
+  opts?: { foePairs?: ReadonlyArray<readonly [string, string]> },
+): BedLayout {
   // --- Sanitize bed dimensions (never throw on bad input). ---------------
   const bedWidthIn = sanitizePositive(dims?.widthIn, 0);
   const bedLengthIn = sanitizePositive(dims?.lengthIn, 0);
@@ -224,43 +265,74 @@ export function layoutBed(dims: BedDims, items: BedItem[]): BedLayout {
     }
   }
 
-  // --- Sort largest-diameter-first (stable, deterministic). --------------
-  // Tie-break by plantId then instance so the order is fully reproducible.
+  // --- Split plants into two "camps" so companion FOES land on opposite
+  // sides of the bed. Camp is the PRIMARY sort key, so camp 0 packs into the
+  // first rows (top) and camp 1 into the last rows (bottom) — opposite ends.
+  const camp = computeFoeCamps(
+    instances.map((i) => i.plantId),
+    opts?.foePairs ?? [],
+  );
+
+  // --- Sort by camp, then largest-diameter-first (stable, deterministic). -
   instances.sort((a, b) => {
+    const ca = camp.get(a.plantId) ?? 0;
+    const cb = camp.get(b.plantId) ?? 0;
+    if (ca !== cb) return ca - cb;
     if (b.diameterIn !== a.diameterIn) return b.diameterIn - a.diameterIn;
     if (a.plantId !== b.plantId) return a.plantId < b.plantId ? -1 : 1;
     return a.instance - b.instance;
   });
 
-  // --- Shelf / row packing in inch coordinates. --------------------------
+  // --- Foe lookup so we never backfill a plant right next to its foe. -----
+  const foeKey = (a: string, b: string) => `${a}|${b}`;
+  const foeSet = new Set<string>();
+  for (const [a, b] of opts?.foePairs ?? []) {
+    foeSet.add(foeKey(a, b));
+    foeSet.add(foeKey(b, a));
+  }
+
+  // --- Row packing WITH GAP BACKFILL. ------------------------------------
+  // Largest-first, each plant drops into the FIRST existing row that has (a)
+  // horizontal room, (b) enough height, and (c) no foe of this plant — so the
+  // small plants fill the empty side space beside the big ones instead of
+  // overflowing, while foes still stay on separate rows. Otherwise it opens a
+  // new row at the bottom.
+  type Row = { top: number; height: number; cursorX: number; ids: Set<string> };
+  const rows: Row[] = [];
   const placements: Placement[] = [];
   let placed = 0;
   let overflow = 0;
-
-  let cursorX = 0; // left edge of the next circle's bounding box
-  let rowTop = 0; // top edge of the current row's bounding boxes
-  let rowMaxHeight = 0; // tallest circle (diameter) on the current row
 
   for (const inst of instances) {
     const d = inst.diameterIn;
     const r = d / 2;
 
-    // Wrap to a new row when this circle won't fit before the right edge.
-    // (cursorX > 0 guard prevents an infinite/empty wrap for circles that are
-    // wider than the whole bed — those just start a fresh row at x=0.)
-    if (cursorX > 0 && cursorX + d > bedWidthIn) {
-      rowTop += rowMaxHeight;
-      cursorX = 0;
-      rowMaxHeight = 0;
+    let row: Row | undefined;
+    for (const rw of rows) {
+      if (rw.cursorX + d > bedWidthIn) continue; // no horizontal room
+      if (d > rw.height) continue; // taller than this row's band
+      let foeHere = false;
+      for (const id of rw.ids) {
+        if (foeSet.has(foeKey(inst.plantId, id))) {
+          foeHere = true;
+          break;
+        }
+      }
+      if (foeHere) continue;
+      row = rw;
+      break;
     }
 
-    // Center of this circle.
-    const xIn = cursorX + r;
-    const yIn = rowTop + r;
+    if (!row) {
+      const prev = rows[rows.length - 1];
+      const top = prev ? prev.top + prev.height : 0;
+      row = { top, height: d, cursorX: 0, ids: new Set() };
+      rows.push(row);
+    }
 
-    // Does it fit within the bed's LENGTH? (bottom edge ≤ bed length)
-    const bottomEdge = rowTop + d;
-    const fits = bottomEdge <= bedLengthIn;
+    const xIn = row.cursorX + r;
+    const yIn = row.top + r;
+    const fits = row.top + d <= bedLengthIn;
 
     placements.push({
       plantId: inst.plantId,
@@ -274,9 +346,8 @@ export function layoutBed(dims: BedDims, items: BedItem[]): BedLayout {
     if (fits) placed += 1;
     else overflow += 1;
 
-    // Advance the cursor and grow this row's height.
-    cursorX += d;
-    if (d > rowMaxHeight) rowMaxHeight = d;
+    row.cursorX += d;
+    row.ids.add(inst.plantId);
   }
 
   // --- Area used percentage (circle-area model; see doc above). ----------

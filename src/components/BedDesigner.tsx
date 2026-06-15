@@ -4,8 +4,10 @@
  * BedDesigner — a to-scale raised-bed layout tool (Garden hub "Bed Layout" tab).
  *
  * The user sets a bed size in FEET, then adds plants with quantity steppers.
- * Each plant's in-row seedSpacing (parsed to inches via parseSpacingInches) is
- * the diameter of its circular "footprint". We hand the bed dimensions (feet →
+ * Each plant's rowSpacing (parsed to inches via parseSpacingInches) is the
+ * diameter of its circular "footprint" — the room a mature plant needs. We also
+ * pass companion FOE pairs so the engine pushes foes to opposite sides. We hand
+ * the bed dimensions (feet →
  * inches) and the plant quantities to the pure `layoutBed` engine, then render
  * the returned Placement[] as a to-scale SVG: a real rectangle with foot
  * gridlines, dimension labels, and one circle per plant instance sized to its
@@ -25,6 +27,7 @@ import {
 } from "@/lib/bedLayout";
 import { plants as ALL_PLANTS, getPlantById } from "@/data/plants";
 import { useGarden } from "@/lib/useGarden";
+import { areFoes } from "@/lib/companions";
 import VeggieIcon from "@/components/VeggieIcon";
 
 /* ------------------------------------------------------------------------- *
@@ -108,9 +111,23 @@ export default function BedDesigner() {
     return ALL_PLANTS.filter((p) => (qty[p.id] ?? 0) > 0).map((plant) => ({
       plant,
       count: qty[plant.id],
-      spacingIn: parseSpacingInches(plant.seedSpacing),
+      // Footprint diameter = ROW spacing (the room a mature plant needs).
+      spacingIn: parseSpacingInches(plant.rowSpacing),
     }));
   }, [qty]);
+
+  /** Companion FOE pairs among the planned plants, so the engine pushes them
+   *  to opposite sides of the bed. */
+  const foePairs = useMemo(() => {
+    const ids = planRows.map((r) => r.plant.id);
+    const pairs: [string, string][] = [];
+    for (let i = 0; i < ids.length; i++) {
+      for (let j = i + 1; j < ids.length; j++) {
+        if (areFoes(ids[i], ids[j])) pairs.push([ids[i], ids[j]]);
+      }
+    }
+    return pairs;
+  }, [planRows]);
 
   /** Build BedItem[] and run the pure layout engine. */
   const layout = useMemo(() => {
@@ -123,8 +140,8 @@ export default function BedDesigner() {
       spacingIn,
       qty: count,
     }));
-    return layoutBed(dims, items);
-  }, [widthFt, lengthFt, planRows]);
+    return layoutBed(dims, items, { foePairs });
+  }, [widthFt, lengthFt, planRows, foePairs]);
 
   /** Plants the user can still add (not already in the plan), for the picker. */
   const addablePlants = useMemo(
@@ -581,7 +598,9 @@ function Legend() {
         />
         No room (overflow)
       </span>
-      <span>Each circle = the plant&apos;s real spacing footprint.</span>
+      <span>
+        Each circle = the room a plant needs (row spacing); foes sit apart.
+      </span>
     </div>
   );
 }

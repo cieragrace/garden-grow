@@ -9,6 +9,7 @@
 import Link from "next/link";
 import { getPlantById } from "@/data/plants";
 import { useGarden } from "@/lib/useGarden";
+import { clearGarden } from "@/lib/garden";
 import PlantCard from "@/components/PlantCard";
 import SaveButton from "@/components/SaveButton";
 
@@ -41,9 +42,24 @@ export default function MyPlantsPanel() {
 
   return (
     <div>
-      <p className="text-sm text-soil-soft" aria-live="polite">
-        {plants.length} plant{plants.length === 1 ? "" : "s"} saved.
-      </p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm text-soil-soft" aria-live="polite">
+          {plants.length} plant{plants.length === 1 ? "" : "s"} saved.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            if (
+              window.confirm("Remove all plants from your garden?")
+            ) {
+              clearGarden();
+            }
+          }}
+          className="rounded-lg border border-line bg-cream px-3 py-1.5 text-sm font-medium text-soil-soft transition-colors hover:border-carrot hover:text-carrot-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-soft"
+        >
+          Clear garden
+        </button>
+      </div>
       <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {plants.map((plant) => (
           <li key={plant.id}>

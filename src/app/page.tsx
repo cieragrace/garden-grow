@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import ZipForm from "@/components/ZipForm";
-import ZoneResume, { ZIP_FORM_ANCHOR_ID } from "@/components/ZoneResume";
+import HeroEntry from "@/components/HeroEntry";
 
 export const metadata: Metadata = {
   title: "Garden Grow — Find what to plant in your zone",
@@ -31,9 +30,6 @@ export default function Home() {
     <div className="mx-auto max-w-5xl px-4 sm:px-6">
       {/* Hero */}
       <section className="flex flex-col items-center gap-6 py-14 text-center sm:py-20">
-        {/* Returning visitors see a "welcome back" banner here; first-timers
-            see nothing extra (ZoneResume renders null). */}
-        <ZoneResume />
         <span
           className="rounded-full bg-sage-soft px-4 py-1.5 text-sm font-medium text-garden"
           aria-hidden="true"
@@ -50,12 +46,7 @@ export default function Home() {
           a simple plan for the season — no green thumb required.
         </p>
 
-        <div
-          id={ZIP_FORM_ANCHOR_ID}
-          className="mt-2 flex w-full justify-center scroll-mt-24"
-        >
-          <ZipForm />
-        </div>
+        <HeroEntry />
       </section>
 
       {/* How it works */}
