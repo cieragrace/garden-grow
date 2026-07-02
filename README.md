@@ -1,4 +1,10 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Garden Grow
+
+A planting companion that turns your zip code into a USDA growing zone and recommends what to plant — with companion-planting guidance and a to-scale bed designer.
+
+> **Origin:** Garden Grow started as a group capstone project at [Turing School](https://turing.edu). This is a solo rebuild in Next.js, where I re-architected the app from the ground up and added new features (companion planting, the to-scale Bed Designer, and more).
+
+Built with [Next.js](https://nextjs.org) (bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app)).
 
 ## Getting Started
 
