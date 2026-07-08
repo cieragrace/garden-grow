@@ -670,8 +670,11 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
             />
           ))}
 
-          {/* Plant footprints */}
-          {placements.map((p) => {
+          {/* Plant footprints. Each spot's position lives in a CSS transform
+              so layout reflows GLIDE (transition on .gg-bed-spot); each spot's
+              content sprouts in on mount (.gg-bed-pop, staggered). Stable
+              plantId-instance keys mean existing plants never re-pop. */}
+          {placements.map((p, i) => {
             const cx = p.xIn * scale;
             const cy = p.yIn * scale;
             const r = (p.diameterIn / 2) * scale;
@@ -679,46 +682,55 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
             // Icon roughly fills the circle but stays readable when tiny.
             const iconSize = Math.max(10, Math.min(r * 1.5, 40));
             return (
-              <g key={`${p.plantId}-${p.instance}`}>
+              <g
+                key={`${p.plantId}-${p.instance}`}
+                className="gg-bed-spot"
+                style={{ transform: `translate(${cx}px, ${cy}px)` }}
+              >
                 {/* Native SVG tooltip: hover a circle to identify it. */}
                 <title>
                   {`${plant?.name ?? p.plantId} — ${p.diameterIn}″ footprint${p.fits ? "" : " (no room)"}`}
                 </title>
-                <circle
-                  cx={cx}
-                  cy={cy}
-                  r={Math.max(r, 4)}
-                  fill={p.fits ? "#D4E2CD" : "#F6D9C2"}
-                  fillOpacity={0.85}
-                  stroke={p.fits ? "#4A7C59" : "#C5713A"}
-                  strokeWidth={p.fits ? 1.5 : 2}
-                  strokeDasharray={p.fits ? undefined : "4 3"}
-                />
-                {plant ? (
-                  <foreignObject
-                    x={cx - iconSize / 2}
-                    y={cy - iconSize / 2}
-                    width={iconSize}
-                    height={iconSize}
-                    style={{ overflow: "visible", pointerEvents: "none" }}
-                  >
-                    <div
-                      style={{
-                        width: iconSize,
-                        height: iconSize,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                      }}
+                <g
+                  className="gg-bed-pop"
+                  style={{ animationDelay: `${Math.min(i * 45, 600)}ms` }}
+                >
+                  <circle
+                    cx={0}
+                    cy={0}
+                    r={Math.max(r, 4)}
+                    fill={p.fits ? "#D4E2CD" : "#F6D9C2"}
+                    fillOpacity={0.85}
+                    stroke={p.fits ? "#4A7C59" : "#C5713A"}
+                    strokeWidth={p.fits ? 1.5 : 2}
+                    strokeDasharray={p.fits ? undefined : "4 3"}
+                  />
+                  {plant ? (
+                    <foreignObject
+                      x={-iconSize / 2}
+                      y={-iconSize / 2}
+                      width={iconSize}
+                      height={iconSize}
+                      style={{ overflow: "visible", pointerEvents: "none" }}
                     >
-                      <VeggieIcon
-                        emoji={plant.emoji}
-                        name={plant.name}
-                        size={iconSize}
-                      />
-                    </div>
-                  </foreignObject>
-                ) : null}
+                      <div
+                        style={{
+                          width: iconSize,
+                          height: iconSize,
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <VeggieIcon
+                          emoji={plant.emoji}
+                          name={plant.name}
+                          size={iconSize}
+                        />
+                      </div>
+                    </foreignObject>
+                  ) : null}
+                </g>
               </g>
             );
           })}

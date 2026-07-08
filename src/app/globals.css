@@ -156,3 +156,30 @@ a {
     animation: none !important;
   }
 }
+
+/* Bed Designer diagram motion: spots glide to new positions when the layout
+   reflows, and each plant sprouts in with a springy pop on mount. */
+.gg-bed-spot {
+  transition: transform 0.45s cubic-bezier(0.25, 0.8, 0.35, 1);
+}
+.gg-bed-pop {
+  transform-box: fill-box;
+  transform-origin: 50% 50%;
+  animation: gg-bed-pop-in 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes gg-bed-pop-in {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gg-bed-spot {
+    transition: none;
+  }
+  .gg-bed-pop {
+    animation: none;
+  }
+}
