@@ -84,7 +84,17 @@ export default function HeroEntry() {
         >
           Cancel
         </button>
-      ) : null}
+      ) : (
+        <p className="text-xs text-soil-soft">
+          Just looking around?{" "}
+          <Link
+            href="/results/80205"
+            className="font-medium text-leaf underline-offset-2 hover:underline"
+          >
+            Try Denver — 80205
+          </Link>
+        </p>
+      )}
     </div>
   );
 }
