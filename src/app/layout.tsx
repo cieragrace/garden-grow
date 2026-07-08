@@ -3,6 +3,7 @@ import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
 const fraunces = Fraunces({
   variable: "--font-display",
@@ -18,12 +19,24 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "Garden Grow — Find what to plant in your zone",
-    template: "%s · Garden Grow",
+    default: `${SITE_NAME} — Find what to plant in your zone`,
+    template: `%s · ${SITE_NAME}`,
   },
-  description:
-    "Enter your ZIP code to find your USDA hardiness zone, discover what you can grow, and build your own garden plan.",
+  description: SITE_DESCRIPTION,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    title: `${SITE_NAME} — Find what to plant in your zone`,
+    description: SITE_DESCRIPTION,
+    url: "/",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${SITE_NAME} — Find what to plant in your zone`,
+    description: SITE_DESCRIPTION,
+  },
 };
 
 export default function RootLayout({

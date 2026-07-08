@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getPlantById, plants } from "@/data/plants";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 import HowToPlant from "@/components/HowToPlant";
 import SaveButton from "@/components/SaveButton";
 import VeggieIcon from "@/components/VeggieIcon";
@@ -44,6 +45,18 @@ export default async function PlantPage({ params }: PageProps) {
   const plant = getPlantById(id);
   if (!plant) notFound();
 
+  // Structured data so search/AI results can cite the page as a growing guide.
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: `How to grow ${plant.name}`,
+    description: plant.description,
+    image: `${SITE_URL}/opengraph-image`,
+    author: { "@type": "Person", name: "Ciera Muniz" },
+    publisher: { "@type": "Organization", name: SITE_NAME },
+    mainEntityOfPage: `${SITE_URL}/plant/${plant.id}`,
+  };
+
   const facts: { emoji: string; label: string; value: string }[] = [
     { emoji: "☀️", label: "Sun", value: plant.sun },
     { emoji: "💧", label: "Water", value: plant.water },
@@ -54,6 +67,10 @@ export default async function PlantPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <nav aria-label="Breadcrumb" className="mb-6 text-sm">
         <Link
           href="/"
