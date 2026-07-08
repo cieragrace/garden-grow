@@ -20,7 +20,12 @@
 import Link from "next/link";
 import { useMemo } from "react";
 import { getPlantById } from "@/data/plants";
-import { companionReport, areFriends, type Plant } from "@/lib/companions";
+import {
+  companionReport,
+  areFriends,
+  pairNote,
+  type Plant,
+} from "@/lib/companions";
 import { useGarden } from "@/lib/useGarden";
 import VeggieIcon from "@/components/VeggieIcon";
 
@@ -130,27 +135,35 @@ export default function CompanionsPanel() {
           </div>
         ) : (
           <ul className="mt-4 flex flex-col gap-3">
-            {conflictPairs.map(({ a, b }) => (
-              <li
-                key={`${a.id}-${b.id}`}
-                className="flex items-center gap-3 rounded-xl border border-carrot/40 bg-carrot/10 px-5 py-4"
-              >
-                <span className="text-2xl" aria-hidden="true">
-                  ⚠️
-                </span>
-                <p className="text-soil">
-                  <span aria-hidden="true">
-                    <VeggieIcon emoji={a.emoji} name={a.name} size={22} />{" "}
+            {conflictPairs.map(({ a, b }) => {
+              const why = pairNote(a.id, b.id);
+              return (
+                <li
+                  key={`${a.id}-${b.id}`}
+                  className="flex items-start gap-3 rounded-xl border border-carrot/40 bg-carrot/10 px-5 py-4"
+                >
+                  <span className="text-2xl" aria-hidden="true">
+                    ⚠️
                   </span>
-                  <span className="font-medium">{a.name}</span> and{" "}
-                  <span aria-hidden="true">
-                    <VeggieIcon emoji={b.emoji} name={b.name} size={22} />{" "}
-                  </span>
-                  <span className="font-medium">{b.name}</span> shouldn&apos;t
-                  share a bed.
-                </p>
-              </li>
-            ))}
+                  <div className="text-soil">
+                    <p>
+                      <span aria-hidden="true">
+                        <VeggieIcon emoji={a.emoji} name={a.name} size={22} />{" "}
+                      </span>
+                      <span className="font-medium">{a.name}</span> and{" "}
+                      <span aria-hidden="true">
+                        <VeggieIcon emoji={b.emoji} name={b.name} size={22} />{" "}
+                      </span>
+                      <span className="font-medium">{b.name}</span>{" "}
+                      shouldn&apos;t share a bed.
+                    </p>
+                    {why ? (
+                      <p className="mt-1 text-sm text-soil-soft">{why}</p>
+                    ) : null}
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>

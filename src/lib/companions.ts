@@ -45,6 +45,106 @@ export function areFriends(a: string, b: string): boolean {
   return friendsOf(a).includes(b) || friendsOf(b).includes(a);
 }
 
+/** Order-independent key for a plant pair: lexicographically sorted "a|b". */
+function pairKey(a: string, b: string): string {
+  return a < b ? `${a}|${b}` : `${b}|${a}`;
+}
+
+/**
+ * One-line explanations for companion relationships — WHY a pair clashes or
+ * pairs well, so the UI can say more than "shouldn't share a bed".
+ *
+ * Foe pairs have full coverage (every foe edge in the dataset has a note);
+ * friend notes cover the classic pairings and fall back to null elsewhere.
+ */
+const PAIR_NOTES: Record<string, string> = {
+  // --- foes: full coverage -------------------------------------------------
+  [pairKey("tomato", "sweet-corn")]:
+    "Corn earworm and tomato fruitworm are the same moth — side by side, you double the buffet.",
+  [pairKey("tomato", "broccoli")]:
+    "Heavy-feeding brassicas outcompete tomatoes for the same nutrients.",
+  [pairKey("tomato", "cauliflower")]:
+    "Heavy-feeding brassicas outcompete tomatoes for the same nutrients.",
+  [pairKey("tomato", "kale")]:
+    "Heavy-feeding brassicas outcompete tomatoes for the same nutrients.",
+  [pairKey("tomato", "potato")]:
+    "Same nightshade family — they share and spread early and late blight.",
+  [pairKey("eggplant", "potato")]:
+    "Same nightshade family — Colorado potato beetles happily eat both.",
+  [pairKey("beet", "green-bean")]:
+    "Beans and beets stunt each other's growth when planted close.",
+  [pairKey("green-bean", "swiss-chard")]:
+    "Chard is a beet cousin — the same bean-beet antagonism applies.",
+  [pairKey("green-bean", "onion")]:
+    "Alliums exude compounds that stunt beans' nitrogen-fixing roots.",
+  [pairKey("green-bean", "garlic")]:
+    "Alliums exude compounds that stunt beans' nitrogen-fixing roots.",
+  [pairKey("pea", "onion")]:
+    "Alliums exude compounds that stunt peas' nitrogen-fixing roots.",
+  [pairKey("pea", "garlic")]:
+    "Alliums exude compounds that stunt peas' nitrogen-fixing roots.",
+  [pairKey("tepary-bean", "onion")]:
+    "Alliums exude compounds that stunt beans' nitrogen-fixing roots.",
+  [pairKey("tepary-bean", "garlic")]:
+    "Alliums exude compounds that stunt beans' nitrogen-fixing roots.",
+  [pairKey("cucumber", "potato")]:
+    "They compete for water, and cucumbers can encourage potato blight.",
+  [pairKey("zucchini", "potato")]:
+    "Sprawling squash vines and hilled potatoes fight for ground and moisture.",
+  [pairKey("winter-squash", "potato")]:
+    "Sprawling squash vines and hilled potatoes fight for ground and moisture.",
+  [pairKey("melon", "potato")]:
+    "Sprawling melon vines and hilled potatoes fight for ground and moisture.",
+  [pairKey("cucumber", "sage")]:
+    "Strongly aromatic sage is known to stunt cucumber vines.",
+  [pairKey("sunflower", "potato")]:
+    "Sunflowers are allelopathic — roots and seed hulls release growth inhibitors.",
+  [pairKey("sunflower", "green-bean")]:
+    "Sunflowers are allelopathic — roots and seed hulls release growth inhibitors.",
+
+  // --- friends: the classics ----------------------------------------------
+  [pairKey("tomato", "basil")]:
+    "Basil's scent confuses hornworm moths — and many swear it sweetens the fruit.",
+  [pairKey("tomato", "garlic")]:
+    "Garlic's sulfur compounds help deter spider mites and blight spores.",
+  [pairKey("carrot", "onion")]:
+    "Onion scent masks carrots from the carrot root fly, and vice versa.",
+  [pairKey("carrot", "tomato")]:
+    "Tomatoes give carrots light shade; loose carrot rows aerate tomato roots.",
+  [pairKey("sweet-corn", "green-bean")]:
+    "Beans fix nitrogen for hungry corn; corn is the beans' living trellis (Three Sisters).",
+  [pairKey("sweet-corn", "winter-squash")]:
+    "Squash leaves mulch corn's roots and deter raiders (Three Sisters).",
+  [pairKey("green-bean", "winter-squash")]:
+    "Beans feed the soil that the big squash vines draw from (Three Sisters).",
+  [pairKey("sweet-corn", "tepary-bean")]:
+    "The desert Three Sisters — tepary beans fix nitrogen and climb the stalks.",
+  [pairKey("lettuce", "radish")]:
+    "Radishes break the soil crust and are harvested before lettuce needs the room.",
+  [pairKey("cucumber", "radish")]:
+    "Radishes lure cucumber beetles away from the vines.",
+  [pairKey("spinach", "pea")]:
+    "Peas fix nitrogen that leafy spinach loves; spinach shades their roots.",
+  [pairKey("bell-pepper", "basil")]:
+    "Basil helps repel the aphids and thrips that bother peppers.",
+  [pairKey("broccoli", "sage")]:
+    "Aromatic sage masks brassicas from cabbage moths.",
+  [pairKey("broccoli", "thyme")]:
+    "Thyme deters cabbage worms hunting for brassicas.",
+  [pairKey("rosemary", "sage")]:
+    "Mediterranean pair with matching lean-soil, low-water habits.",
+  [pairKey("rosemary", "lavender")]:
+    "Mediterranean pair with matching lean-soil, low-water habits.",
+};
+
+/**
+ * The one-line reason two plants clash or pair well, or null when the dataset
+ * doesn't record one. Order-independent.
+ */
+export function pairNote(a: string, b: string): string | null {
+  return PAIR_NOTES[pairKey(a, b)] ?? null;
+}
+
 /** An unordered foe pairing between two saved plant ids. */
 export interface CompanionConflict {
   a: string;

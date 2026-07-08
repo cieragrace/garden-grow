@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getPlantById, type Plant } from "@/data/plants";
+import { pairNote } from "@/lib/companions";
 import VeggieIcon from "@/components/VeggieIcon";
 
 interface CompanionsProps {
@@ -22,6 +23,8 @@ interface CompanionListProps {
   emptyText: string;
   companions: Plant[];
   zone: number | null;
+  /** The plant whose page this is — used to look up pair reasons. */
+  sourceId: string;
 }
 
 function CompanionList({
@@ -31,6 +34,7 @@ function CompanionList({
   emptyText,
   companions,
   zone,
+  sourceId,
 }: CompanionListProps) {
   return (
     <div className="rounded-xl border border-line bg-cream-deep p-4">
@@ -53,10 +57,12 @@ function CompanionList({
               zone != null
                 ? `/plant/${c.id}?zone=${zone}`
                 : `/plant/${c.id}`;
+            const why = pairNote(sourceId, c.id);
             return (
               <li key={c.id}>
                 <Link
                   href={href}
+                  title={why ?? undefined}
                   className="flex items-center gap-1.5 rounded-full border border-sage bg-cream px-3 py-1.5 text-sm text-garden no-underline transition-colors hover:bg-sage-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-soft"
                 >
                   <span aria-hidden="true">
@@ -99,6 +105,7 @@ export default function Companions({ plant, zone }: CompanionsProps) {
           emptyText={`No standout friends recorded for ${plant.name} — it plays well with most things.`}
           companions={friends}
           zone={zone}
+          sourceId={plant.id}
         />
         <CompanionList
           heading="Keep apart"
@@ -107,6 +114,7 @@ export default function Companions({ plant, zone }: CompanionsProps) {
           emptyText={`No known foes for ${plant.name} — plant it wherever you like.`}
           companions={foes}
           zone={zone}
+          sourceId={plant.id}
         />
       </div>
     </section>
