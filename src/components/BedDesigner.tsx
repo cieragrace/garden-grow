@@ -48,7 +48,9 @@ const PRESETS: { label: string; widthFt: number; lengthFt: number }[] = [
 /** Diagram sizing bounds (px). */
 const DIAGRAM_MAX_W = 640;
 const DIAGRAM_MAX_H = 520;
-const DIAGRAM_PAD = 28; // room for dimension labels around the bed rectangle
+const DIAGRAM_PAD = 34; // room for dimension labels + frame around the bed
+/** Visual thickness of the wooden frame, in px (outside the to-scale soil). */
+const FRAME_PX = 10;
 
 /** Verdict → palette + friendly copy. */
 const VERDICT_COPY: Record<
@@ -575,20 +577,74 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
         role="img"
         aria-label={`To-scale diagram of a ${widthFt} by ${lengthFt} foot bed with ${layout.placed} of ${layout.requested} plants placed.`}
       >
-        <g transform={`translate(${DIAGRAM_PAD} ${DIAGRAM_PAD})`}>
-          {/* Soil bed */}
-          <rect
-            x={0}
-            y={0}
-            width={bedW}
-            height={bedH}
-            rx={10}
-            fill="#EFE9DC"
-            stroke="#A9C4A0"
-            strokeWidth={2}
-          />
+        <defs>
+          {/* Tiled soil speckle — deterministic texture, no randomness. */}
+          <pattern
+            id="gg-soil"
+            patternUnits="userSpaceOnUse"
+            width={26}
+            height={26}
+          >
+            <rect width={26} height={26} fill="#7D5F45" />
+            <circle cx={5} cy={7} r={1.3} fill="#6A4F38" />
+            <circle cx={17} cy={4} r={1} fill="#93765B" />
+            <circle cx={21} cy={16} r={1.4} fill="#6A4F38" />
+            <circle cx={9} cy={20} r={1} fill="#93765B" />
+            <circle cx={14} cy={12} r={0.9} fill="#5E4632" />
+          </pattern>
+        </defs>
 
-          {/* Foot gridlines */}
+        <g transform={`translate(${DIAGRAM_PAD} ${DIAGRAM_PAD})`}>
+          {/* Wooden raised-bed frame — drawn OUTSIDE the soil rect so the
+              inner area stays exactly to scale. Side planks first, then the
+              top/bottom planks overlap them like real butt joints. */}
+          <g>
+            <rect
+              x={-FRAME_PX}
+              y={-FRAME_PX}
+              width={FRAME_PX}
+              height={bedH + FRAME_PX * 2}
+              rx={2.5}
+              fill="#A9805C"
+              stroke="#6E543C"
+              strokeWidth={1}
+            />
+            <rect
+              x={bedW}
+              y={-FRAME_PX}
+              width={FRAME_PX}
+              height={bedH + FRAME_PX * 2}
+              rx={2.5}
+              fill="#A9805C"
+              stroke="#6E543C"
+              strokeWidth={1}
+            />
+            <rect
+              x={-FRAME_PX}
+              y={-FRAME_PX}
+              width={bedW + FRAME_PX * 2}
+              height={FRAME_PX}
+              rx={2.5}
+              fill="#B98F6B"
+              stroke="#6E543C"
+              strokeWidth={1}
+            />
+            <rect
+              x={-FRAME_PX}
+              y={bedH}
+              width={bedW + FRAME_PX * 2}
+              height={FRAME_PX}
+              rx={2.5}
+              fill="#94704F"
+              stroke="#6E543C"
+              strokeWidth={1}
+            />
+          </g>
+
+          {/* Soil */}
+          <rect x={0} y={0} width={bedW} height={bedH} fill="url(#gg-soil)" />
+
+          {/* Foot gridlines — faint dibber lines pressed into the soil */}
           {vLines.map((f) => (
             <line
               key={`v${f}`}
@@ -596,8 +652,9 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
               y1={0}
               x2={f * ftPx}
               y2={bedH}
-              stroke="#D4E2CD"
+              stroke="rgba(247, 244, 236, 0.28)"
               strokeWidth={1}
+              strokeDasharray="2 6"
             />
           ))}
           {hLines.map((f) => (
@@ -607,8 +664,9 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
               y1={f * ftPx}
               x2={bedW}
               y2={f * ftPx}
-              stroke="#D4E2CD"
+              stroke="rgba(247, 244, 236, 0.28)"
               strokeWidth={1}
+              strokeDasharray="2 6"
             />
           ))}
 
