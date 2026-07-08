@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { getPlantById, plants } from "@/data/plants";
@@ -7,6 +6,7 @@ import { SITE_NAME, SITE_URL } from "@/lib/site";
 import HowToPlant from "@/components/HowToPlant";
 import SaveButton from "@/components/SaveButton";
 import VeggieIcon from "@/components/VeggieIcon";
+import Crumbs from "./Crumbs";
 import ZoneAware from "./ZoneAware";
 
 interface PageProps {
@@ -71,18 +71,7 @@ export default async function PlantPage({ params }: PageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <nav aria-label="Breadcrumb" className="mb-6 text-sm">
-        <Link
-          href="/"
-          className="text-leaf no-underline hover:underline"
-        >
-          Home
-        </Link>
-        <span className="mx-2 text-soil-soft" aria-hidden="true">
-          /
-        </span>
-        <span className="text-soil-soft">{plant.name}</span>
-      </nav>
+      <Crumbs plantName={plant.name} />
 
       <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-4">
