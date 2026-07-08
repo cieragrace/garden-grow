@@ -1,4 +1,5 @@
 import { plantingWindows, type Plant } from "@/data/plants";
+import { frostDatesForZone } from "@/lib/zones";
 
 interface PlantCalendarProps {
   plant: Plant;
@@ -39,6 +40,7 @@ export default function PlantCalendar({
 }: PlantCalendarProps) {
   const w = plantingWindows(plant, zone);
   const outOfRange = !zoneInRange;
+  const frost = frostDatesForZone(zone);
 
   const phases: Phase[] = [
     {
@@ -78,6 +80,19 @@ export default function PlantCalendar({
       </h2>
       <p className="mt-1 text-sm text-soil-soft">
         Approximate windows, shifted for your zone&apos;s season length.
+      </p>
+      <p className="mt-1 text-sm text-soil-soft">
+        <span aria-hidden="true">❄️ </span>
+        {frost.lastFrost ? (
+          <>
+            Zone {zone} typically sees its last frost ~
+            <span className="font-medium text-soil">{frost.lastFrost}</span>{" "}
+            and its first ~
+            <span className="font-medium text-soil">{frost.firstFrost}</span>.
+          </>
+        ) : (
+          <>Zone {zone} is essentially frost-free — you can plant year-round.</>
+        )}
       </p>
 
       {outOfRange ? (

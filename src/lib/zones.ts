@@ -34,6 +34,40 @@ export interface ZoneResult {
 /** Timeout for the optional phzmapi.org refinement request, in milliseconds. */
 const API_TIMEOUT_MS = 1200;
 
+/** Typical frost dates for a zone (null = essentially frost-free). */
+export interface FrostDates {
+  /** Approximate last spring frost, e.g. "mid-Apr". */
+  lastFrost: string | null;
+  /** Approximate first fall frost, e.g. "mid-Oct". */
+  firstFrost: string | null;
+}
+
+/**
+ * Zone-typical frost dates — the anchor gardeners actually plan around.
+ * APPROXIMATE by nature (zones are 10°F winter-minimum bands, frost dates vary
+ * within them), but close enough to ground the shifted planting windows.
+ */
+const ZONE_FROST: Record<number, FrostDates> = {
+  1: { lastFrost: "mid-Jun", firstFrost: "mid-Aug" },
+  2: { lastFrost: "early Jun", firstFrost: "late Aug" },
+  3: { lastFrost: "late May", firstFrost: "mid-Sep" },
+  4: { lastFrost: "mid-May", firstFrost: "late Sep" },
+  5: { lastFrost: "early May", firstFrost: "mid-Oct" },
+  6: { lastFrost: "mid-Apr", firstFrost: "mid-Oct" },
+  7: { lastFrost: "early Apr", firstFrost: "late Oct" },
+  8: { lastFrost: "mid-Mar", firstFrost: "mid-Nov" },
+  9: { lastFrost: "late Feb", firstFrost: "early Dec" },
+  10: { lastFrost: "late Jan (rare)", firstFrost: "mid-Dec (rare)" },
+};
+
+/**
+ * Typical last/first frost dates for a zone. Zones 11+ return nulls —
+ * effectively frost-free, plant year-round.
+ */
+export function frostDatesForZone(zone: number): FrostDates {
+  return ZONE_FROST[zone] ?? { lastFrost: null, firstFrost: null };
+}
+
 /**
  * Validate a US zipcode: exactly 5 digits.
  * (ZIP+4 and non-numeric input are rejected; pass the 5-digit base only.)
