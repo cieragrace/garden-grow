@@ -1,25 +1,28 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPlantById, matchableZone } from "@/data/plants";
-import PlantCalendar from "@/components/PlantCalendar";
+import { Suspense } from "react";
+import { getPlantById, plants } from "@/data/plants";
 import HowToPlant from "@/components/HowToPlant";
-import Companions from "@/components/Companions";
 import SaveButton from "@/components/SaveButton";
 import VeggieIcon from "@/components/VeggieIcon";
+import ZoneAware from "./ZoneAware";
 
 interface PageProps {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ zone?: string }>;
 }
 
-/** Parse a sane zone (3–13) from the query string, or null. */
-function parseZone(raw: string | undefined): number | null {
-  if (!raw) return null;
-  const n = parseInt(raw, 10);
-  if (!Number.isFinite(n) || n < 1 || n > 13) return null;
-  return n;
+/**
+ * The dataset is fully static, so every plant page prerenders at build time.
+ * Zone personalization (?zone=N) lives in the ZoneAware client child, which
+ * reads searchParams without forcing the page dynamic.
+ */
+export function generateStaticParams() {
+  return plants.map((p) => ({ id: p.id }));
 }
+
+/** Unknown ids 404 immediately instead of attempting a dynamic render. */
+export const dynamicParams = false;
 
 export async function generateMetadata({
   params,
@@ -35,21 +38,11 @@ export async function generateMetadata({
   };
 }
 
-export default async function PlantPage({ params, searchParams }: PageProps) {
+export default async function PlantPage({ params }: PageProps) {
   const { id } = await params;
-  const { zone: zoneParam } = await searchParams;
 
   const plant = getPlantById(id);
   if (!plant) notFound();
-
-  const zone = parseZone(zoneParam);
-  // Fall back to the dataset's baseline (zone 6) so the calendar still renders.
-  const calendarZone = zone ?? 6;
-  // Only treat the calendar as authoritative when an explicit zone is both
-  // provided AND within this plant's recommended zones. Otherwise it's shown
-  // "for reference" with an inline note (see PlantCalendar). Tropical zones
-  // 12–13 count as in-range whenever zone 11 is (see matchableZone).
-  const zoneInRange = zone == null || plant.zones.includes(matchableZone(zone));
 
   const facts: { emoji: string; label: string; value: string }[] = [
     { emoji: "☀️", label: "Sun", value: plant.sun },
@@ -118,29 +111,17 @@ export default async function PlantPage({ params, searchParams }: PageProps) {
         </dl>
       </section>
 
-      {/* Planting calendar */}
-      <div className="mt-8">
-        {zone == null ? (
-          <p className="mb-3 text-sm text-soil-soft">
-            Showing a typical Zone 6 calendar.{" "}
-            <Link href="/" className="font-medium text-leaf hover:underline">
-              Enter your ZIP
-            </Link>{" "}
-            for windows tailored to your area.
-          </p>
-        ) : null}
-        <PlantCalendar
-          plant={plant}
-          zone={calendarZone}
-          zoneInRange={zoneInRange}
-        />
-      </div>
-
-      {/* How to plant */}
-      <HowToPlant plant={plant} />
-
-      {/* Companion planting */}
-      <Companions plant={plant} zone={zone} />
+      {/* Calendar + companions personalize to ?zone=N client-side; the
+          how-to-plant section stays server-rendered between them. */}
+      <Suspense
+        fallback={
+          <div className="mt-8 h-48 animate-pulse rounded-xl border border-line bg-cream-deep" />
+        }
+      >
+        <ZoneAware plant={plant}>
+          <HowToPlant plant={plant} />
+        </ZoneAware>
+      </Suspense>
     </div>
   );
 }
