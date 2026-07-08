@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Garden Grow Build Report — July 7, 2026</title>
+<style>
+  :root {
+    --ink: #27201a;
+    --navy: #2f6b3d;
+    --gold: #e08a4b;
+    --paper: #ffffff;
+    --soft: #efe9dc;
+    --line: #e3dccc;
+    --muted: #5a5147;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Avenir Next', 'Helvetica Neue', Arial, sans-serif;
+    color: var(--ink); background: var(--paper);
+    font-size: 10.5pt; line-height: 1.5;
+  }
+  .page { padding: 48px 56px; }
+  header.masthead {
+    background: var(--navy); color: #fff;
+    padding: 44px 56px 36px;
+  }
+  .masthead .kicker { text-transform: uppercase; letter-spacing: 3px; font-size: 8.5pt; color: var(--gold); font-weight: 600; }
+  .masthead h1 { font-size: 26pt; font-weight: 700; margin: 6px 0 4px; }
+  .masthead .sub { font-size: 11pt; color: #d4e2cd; }
+  .stats { display: flex; gap: 14px; margin: 26px 0 6px; }
+  .stat {
+    flex: 1; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.18);
+    border-radius: 8px; padding: 12px 14px;
+  }
+  .stat .n { font-size: 17pt; font-weight: 700; color: var(--gold); }
+  .stat .l { font-size: 8pt; text-transform: uppercase; letter-spacing: 1.2px; color: #d4e2cd; }
+  h2 {
+    font-size: 14pt; color: var(--navy); margin: 26px 0 10px;
+    padding-bottom: 6px; border-bottom: 2px solid var(--gold);
+  }
+  h3 { font-size: 11pt; color: var(--navy); margin: 14px 0 4px; }
+  p { margin: 6px 0; }
+  ul { margin: 4px 0 10px 18px; }
+  li { margin: 2.5px 0; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 9.5pt; }
+  th { background: var(--soft); text-align: left; padding: 7px 10px; border-bottom: 2px solid var(--line); font-size: 8.5pt; text-transform: uppercase; letter-spacing: 1px; color: var(--navy); }
+  td { padding: 6px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .pill { display: inline-block; border-radius: 10px; padding: 1px 8px; font-size: 8pt; font-weight: 600; }
+  .pill.high { background: #f6e3e1; color: #8c2f26; }
+  .pill.fixed { background: #e3efe4; color: #2c5f34; }
+  .two-col { display: flex; gap: 28px; }
+  .two-col > div { flex: 1; }
+  .note { color: var(--muted); font-size: 9pt; }
+  code { font-family: 'SF Mono', Menlo, monospace; font-size: 8.5pt; background: var(--soft); padding: 1px 4px; border-radius: 3px; }
+  footer { margin-top: 28px; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 8.5pt; display: flex; justify-content: space-between; }
+  .avoid-break { break-inside: avoid; }
+  @page { size: Letter; margin: 0; }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="kicker">Garden Grow · Internal Build Report</div>
+  <h1>Full Review to Production in a Day</h1>
+  <div class="sub">July 7, 2026 · branch <b>main</b> · commits bbabd47 → 742de4d · pushed &amp; deployed to Vercel</div>
+  <div class="stats">
+    <div class="stat"><div class="n">29</div><div class="l">Commits</div></div>
+    <div class="stat"><div class="n">+2.0k</div><div class="l">Lines added</div></div>
+    <div class="stat"><div class="n">46</div><div class="l">Files changed</div></div>
+    <div class="stat"><div class="n">24→35</div><div class="l">Plants in dataset</div></div>
+    <div class="stat"><div class="n">10</div><div class="l">Bugs fixed</div></div>
+  </div>
+</header>
+
+<div class="page">
+
+<h2>What happened</h2>
+<p>Three parallel reviewers swept the codebase with different lenses: correctness, Next.js/SEO/accessibility, and portfolio presentation. Every finding was implemented the same day as five stacked branches with one commit per numbered item, then a sixth request added a visual showpiece pass on the Bed Designer. Each commit passed TypeScript and ESLint; each branch passed a full production build; visual work was screenshot-verified in a real browser; dataset changes were checked by invariant scripts (companion symmetry, archetype coverage, note coverage). The stack merged to main as a clean fast-forward and went live the same evening.</p>
+
+<h2>Shipped, by area</h2>
+
+<div class="two-col">
+<div>
+<h3>Data &amp; correctness</h3>
+<ul>
+  <li><b>Fixed:</b> Hawaii / Puerto Rico / Guam ZIPs (zones 12–13) always saw the "no crop matches" empty state; tropical zones now share the zone-11 crop list</li>
+  <li><b>Fixed:</b> zone lookup blocked up to 1.2s on the network despite an instant offline answer; the fallback now renders immediately and the API refines in the background</li>
+  <li><b>Fixed:</b> the water-wise collection's 11 plants (okra, tepary bean, amaranth, sunflower, melon, sweet potato, and 5 herbs) existed in the archetype map and icon set but never in the dataset; restored with symmetric companion links</li>
+  <li><b>Fixed:</b> planting-calendar months clamped at Jan/Dec, collapsing warm-zone windows to "Jan – Jan"; months now wrap the year, and fall-planted garlic shifts earlier in cold zones instead of later</li>
+  <li><b>Fixed:</b> opening a plant from My Garden dropped the saved zone and nagged for a ZIP the app already knew</li>
+  <li><b>Fixed:</b> the bed's "cramped" verdict band was geometrically unreachable; bands recalibrated to real packing densities</li>
+  <li><b>Fixed:</b> four smaller items: cross-tab storage clears now sync, bed size inputs no longer fight multi-digit typing, plant lookup is O(1), and El Paso's ZIP prefix maps to its real zone</li>
+</ul>
+
+<h3>SEO &amp; platform</h3>
+<ul>
+  <li>Results pages server-render the zone and full plant grid (crawlers previously saw an empty skeleton on the app's most valuable route)</li>
+  <li>All 35 plant pages prerender as static HTML at build time</li>
+  <li>Sitemap (37 URLs), robots.txt, Open Graph / Twitter cards with a branded card image, and Article JSON-LD on every plant page</li>
+  <li>Malformed ZIP URLs return real 404s instead of indexable soft-404 pages</li>
+  <li>Branded seedling favicon and iOS icon; create-next-app template assets removed</li>
+</ul>
+</div>
+
+<div>
+<h3>Portfolio &amp; UX polish</h3>
+<ul>
+  <li>README rewritten as a proper landing page: live link, feature tour with six screenshots (moved to <code>docs/screenshots/</code>), architecture notes</li>
+  <li>"Try Denver — 80205" one-click demo link on the hero</li>
+  <li>Animated hero sprout: grows, unfurls, blooms, then sways (CSS only, reduced-motion safe)</li>
+  <li>Bed plans persist across refresh, and any plan can be shared as a URL that reopens the exact bed</li>
+  <li>Category + water-wise filter chips on results</li>
+  <li>"Why they clash" one-liners on every foe pair; classic-pairing notes on friends</li>
+  <li>Zone-typical frost dates on the planting calendar</li>
+  <li>Printable bed plan with a print-only masthead and shopping list</li>
+  <li>Breadcrumb back to "Zone N plants" from any plant page</li>
+</ul>
+
+<h3>Bed Designer showpiece</h3>
+<ul>
+  <li>Illustrated raised bed: wooden plank frame, speckled soil, dibber-line grid; the soil area stays exactly to scale</li>
+  <li>Plants sprout in with a staggered pop and glide to new spots when the layout reflows</li>
+  <li>Hover or tap any plant: green threads draw to its friends, rust dashes to its foes, and an inspector card shows footprint, harvest window, and relationships</li>
+  <li>Season scrubber: drag from day 0 to harvest and watch every circle grow at its own real rate, with ghost rings for full-grown footprints and golden rings when a plant is ready to pick</li>
+</ul>
+</div>
+</div>
+
+<h2>Review &amp; hardening</h2>
+<p>The review's six core correctness findings, all closed the same day:</p>
+
+<table class="avoid-break">
+  <tr><th>Finding</th><th>Why it mattered</th><th>Status</th></tr>
+  <tr><td>Zones 12–13 guaranteed an empty result</td><td>Every Hawaii, Puerto Rico, and Guam visitor saw a broken app</td><td><span class="pill fixed">FIXED</span></td></tr>
+  <tr><td>Zone lookup always waited on the API</td><td>Up to 1.2s staring at a skeleton for an answer the app already had</td><td><span class="pill fixed">FIXED</span></td></tr>
+  <tr><td>Water-wise plant data never shipped</td><td>A whole feature's content was silently absent; its icons and planting archetypes sat unused</td><td><span class="pill fixed">FIXED</span></td></tr>
+  <tr><td>My Garden dropped the saved zone</td><td>Detail pages nagged for a ZIP the app already knew; reads as broken in a demo</td><td><span class="pill fixed">FIXED</span></td></tr>
+  <tr><td>Calendar clamped instead of wrapping the year</td><td>Zone-10 windows showed "Jan – Jan"; cold-zone garlic shifted the wrong direction agronomically</td><td><span class="pill fixed">FIXED</span></td></tr>
+  <tr><td>"Cramped" verdict was mathematically unreachable</td><td>Beds jumped straight from snug to overcrowded</td><td><span class="pill fixed">FIXED</span></td></tr>
+</table>
+<p class="note">One judgment call surfaced after shipping: the water-wise plants had been removed from the app on purpose in June. The restored version is edibles-only (no ornamental xeriscape flow) and was kept after review. The archived xeriscape project remains untouched for future use.</p>
+
+<h2 class="avoid-break">Deliberately not built (on the roadmap)</h2>
+<table class="avoid-break">
+  <tr><th>Item</th><th>Priority</th></tr>
+  <tr><td>Connect the Vercel project to the GitHub repo so pushes auto-deploy (today's deploy was manual <code>vercel --prod</code>)</td><td>Medium</td></tr>
+  <tr><td>Submit the new sitemap in Google Search Console</td><td>Medium</td></tr>
+  <tr><td>Drag-and-drop bed placement with live collision and foe feedback (the deferred showpiece candidate)</td><td>Medium</td></tr>
+  <tr><td>Sun/shade smarts: north arrow + tall-plant shading warnings from mature-size data</td><td>Low</td></tr>
+  <tr><td>Refresh README screenshots to show the new bed visuals; force full-grown view when printing mid-scrub</td><td>Low</td></tr>
+</table>
+
+<h2>Paper trail</h2>
+<ul>
+  <li><code>fix/review-bugs</code> → <code>seo/portfolio-pass</code> → <code>feat/portfolio-polish</code> → <code>chore/minor-cleanups</code> → <code>feat/bed-showpiece</code> — the five stacked branches, kept locally, one commit per numbered finding</li>
+  <li><code>README.md</code> + <code>docs/screenshots/</code> — the new repo landing page and its six committed screenshots</li>
+  <li><code>docs/reports/2026-07-07-build-report.html</code> — this report's reskinnable source</li>
+</ul>
+
+<footer>
+  <span>garden-grow · github.com/cieragrace/garden-grow · main @ 742de4d</span>
+  <span>Report generated July 7, 2026</span>
+</footer>
+
+</div>
+</body>
+</html>
