@@ -386,6 +386,7 @@ export default function BedDesigner() {
               />
               <BedDiagram layout={layout} />
               <Legend />
+              <FoeCallout foePairs={foePairs} />
             </>
           ) : (
             <EmptyState
@@ -527,6 +528,10 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
             const iconSize = Math.max(10, Math.min(r * 1.5, 40));
             return (
               <g key={`${p.plantId}-${p.instance}`}>
+                {/* Native SVG tooltip: hover a circle to identify it. */}
+                <title>
+                  {`${plant?.name ?? p.plantId} — ${p.diameterIn}″ footprint${p.fits ? "" : " (no room)"}`}
+                </title>
                 <circle
                   cx={cx}
                   cy={cy}
@@ -619,6 +624,27 @@ function Legend() {
         Each circle = the room a plant needs (row spacing); foes sit apart.
       </span>
     </div>
+  );
+}
+
+/**
+ * Names exactly WHICH foe pairs the layout engine kept apart, so the
+ * separation isn't invisible magic in the diagram.
+ */
+function FoeCallout({ foePairs }: { foePairs: [string, string][] }) {
+  if (foePairs.length === 0) return null;
+  const names = (id: string) => getPlantById(id)?.name ?? id;
+  return (
+    <p className="rounded-lg border border-sage bg-sage-soft px-3 py-2 text-xs text-garden">
+      <span aria-hidden="true">🚧 </span>
+      <span className="font-medium">Kept apart:</span>{" "}
+      {foePairs.map(([a, b], i) => (
+        <span key={`${a}|${b}`}>
+          {i > 0 ? " · " : ""}
+          {names(a)} ↔ {names(b)}
+        </span>
+      ))}
+    </p>
   );
 }
 
