@@ -113,9 +113,10 @@ function notify(): void {
   for (const listener of listeners) listener();
 }
 
-// Keep other tabs in sync.
+// Keep other tabs in sync. A null key means localStorage.clear() ran in
+// another tab, which wipes this store too — resync on that as well.
 if (isBrowser()) {
   window.addEventListener("storage", (e) => {
-    if (e.key === LAST_ZONE_KEY) notify();
+    if (e.key === LAST_ZONE_KEY || e.key === null) notify();
   });
 }
