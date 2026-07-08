@@ -43,3 +43,6 @@ next-env.d.ts
 # local preview screenshots
 gg-*.png
 preview-*.png
+
+# committed README screenshots (exception to gg-*.png above)
+!docs/screenshots/*.png
