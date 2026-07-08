@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import GrowingSprout from "@/components/GrowingSprout";
 import HeroEntry from "@/components/HeroEntry";
 
 export const metadata: Metadata = {
@@ -30,6 +31,7 @@ export default function Home() {
     <div className="mx-auto max-w-5xl px-4 sm:px-6">
       {/* Hero */}
       <section className="flex flex-col items-center gap-6 py-14 text-center sm:py-20">
+        <GrowingSprout className="-mb-3" />
         <span
           className="rounded-full bg-sage-soft px-4 py-1.5 text-sm font-medium text-garden"
           aria-hidden="true"
