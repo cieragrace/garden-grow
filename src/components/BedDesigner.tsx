@@ -19,6 +19,7 @@
  */
 
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import {
   layoutBed,
   parseSpacingInches,
@@ -88,12 +89,20 @@ type QtyMap = Record<string, number>;
 export default function BedDesigner() {
   const { saved } = useGarden();
 
-  // Bed dimensions, in FEET. Restored from the persisted plan when present.
+  // A shared link (?w=4&l=8&p=tomato:2,basil:4) beats the persisted plan on
+  // first render so "copy link to my plan" opens the exact same bed for the
+  // recipient; afterwards the plan is user-owned local state as usual.
+  const searchParams = useSearchParams();
+  const urlPlan = useMemo(() => parseUrlPlan(searchParams), [searchParams]);
+
+  // Bed dimensions, in FEET. Restored from URL plan, then persisted plan.
   const [widthFt, setWidthFt] = useState(() => {
+    if (urlPlan) return urlPlan.widthFt;
     const stored = readBedPlan();
     return stored ? clampFt(stored.widthFt) : 4;
   });
   const [lengthFt, setLengthFt] = useState(() => {
+    if (urlPlan) return urlPlan.lengthFt;
     const stored = readBedPlan();
     return stored ? clampFt(stored.lengthFt) : 8;
   });
@@ -107,12 +116,16 @@ export default function BedDesigner() {
   // the "Add my saved plants" button is the explicit, opt-in way to pull in
   // newly-saved plants.
   const [qty, setQty] = useState<QtyMap>(() => {
+    if (urlPlan) return urlPlan.qty;
     const stored = readBedPlan();
     if (stored) return stored.qty;
     const seed: QtyMap = {};
     for (const id of saved) seed[id] = 1;
     return seed;
   });
+
+  // Share feedback for the copy-link button.
+  const [copied, setCopied] = useState(false);
 
   // Write-through persistence: the tuned plan survives refresh/tab close,
   // matching how saved plants already behave.
@@ -195,6 +208,25 @@ export default function BedDesigner() {
   }
 
   const savedNotYetAdded = saved.filter((id) => (qty[id] ?? 0) === 0);
+
+  /** Copy a link that reopens this exact plan (bed size + quantities). */
+  async function copyShareLink() {
+    const params = new URLSearchParams();
+    params.set("tab", "bed");
+    params.set("w", String(widthFt));
+    params.set("l", String(lengthFt));
+    const p = planRows.map((r) => `${r.plant.id}:${r.count}`).join(",");
+    if (p) params.set("p", p);
+    try {
+      await navigator.clipboard.writeText(
+        `${window.location.origin}/garden?${params.toString()}`,
+      );
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard unavailable (permissions/insecure context) — quietly skip.
+    }
+  }
 
   /* --- Render ------------------------------------------------------------ */
 
@@ -387,6 +419,15 @@ export default function BedDesigner() {
               <BedDiagram layout={layout} />
               <Legend />
               <FoeCallout foePairs={foePairs} />
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={copyShareLink}
+                  className="rounded-lg border border-sage px-4 py-2 text-sm font-medium text-garden transition-colors hover:bg-sage-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-soft"
+                >
+                  {copied ? "✓ Link copied" : "🔗 Copy link to this plan"}
+                </button>
+              </div>
             </>
           ) : (
             <EmptyState
@@ -729,6 +770,36 @@ function EmptyState({
 function clampFt(v: number): number {
   if (!Number.isFinite(v) || v < 1) return 1;
   return Math.min(Math.round(v), 20);
+}
+
+/**
+ * Parse a shared bed plan out of the URL (?w=4&l=8&p=tomato:2,basil:4).
+ * Returns null when the URL carries no plan at all; unknown plant ids and
+ * bad quantities are dropped, dimensions are clamped like the inputs.
+ */
+function parseUrlPlan(params: {
+  get(name: string): string | null;
+}): { widthFt: number; lengthFt: number; qty: QtyMap } | null {
+  const w = params.get("w");
+  const l = params.get("l");
+  const p = params.get("p");
+  if (w === null && l === null && p === null) return null;
+
+  const qty: QtyMap = {};
+  if (p) {
+    for (const part of p.split(",")) {
+      const [id, n] = part.split(":");
+      const count = parseInt(n ?? "", 10);
+      if (id && getPlantById(id) && Number.isFinite(count) && count > 0) {
+        qty[id] = Math.min(count, 99);
+      }
+    }
+  }
+  return {
+    widthFt: clampFt(Number(w ?? 4)),
+    lengthFt: clampFt(Number(l ?? 8)),
+    qty,
+  };
 }
 
 /** Render a foot count, dropping a trailing ".0" for whole numbers. */
