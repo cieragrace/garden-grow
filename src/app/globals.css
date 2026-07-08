@@ -63,3 +63,23 @@ h4 {
 a {
   color: var(--color-leaf);
 }
+
+/* Print the Bed Designer plan as a clean sheet: when the bed tab is on
+   screen, hide everything except #bed-print-area (diagram, readout, legend,
+   and the print-only masthead/list inside BedDesigner). Other pages print
+   normally — the rules only match when #bed-print-area exists. */
+@media print {
+  body:has(#bed-print-area) * {
+    visibility: hidden;
+  }
+  body:has(#bed-print-area) #bed-print-area,
+  body:has(#bed-print-area) #bed-print-area * {
+    visibility: visible;
+  }
+  body:has(#bed-print-area) #bed-print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}

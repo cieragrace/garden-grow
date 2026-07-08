@@ -404,9 +404,24 @@ export default function BedDesigner() {
         </div>
 
         {/* ---------------- Diagram column ---------------- */}
-        <div className="flex flex-col gap-4">
+        {/* #bed-print-area: printing this tab outputs just the plan (see
+            globals.css @media print) — a nursery-ready sheet. */}
+        <div id="bed-print-area" className="flex flex-col gap-4">
           {hasPlants ? (
             <>
+              {/* Print-only masthead + shopping list. */}
+              <div className="hidden print:block">
+                <h2 className="text-2xl font-display">
+                  🌱 Garden Grow — bed plan
+                </h2>
+                <ul className="mt-2 text-sm">
+                  {planRows.map((r) => (
+                    <li key={r.plant.id}>
+                      {r.count}× {r.plant.name} — {r.spacingIn}&Prime; apart
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <BedReadout
                 widthFt={widthFt}
                 lengthFt={lengthFt}
@@ -419,13 +434,20 @@ export default function BedDesigner() {
               <BedDiagram layout={layout} />
               <Legend />
               <FoeCallout foePairs={foePairs} />
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 print:hidden">
                 <button
                   type="button"
                   onClick={copyShareLink}
                   className="rounded-lg border border-sage px-4 py-2 text-sm font-medium text-garden transition-colors hover:bg-sage-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-soft"
                 >
                   {copied ? "✓ Link copied" : "🔗 Copy link to this plan"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  className="rounded-lg border border-sage px-4 py-2 text-sm font-medium text-garden transition-colors hover:bg-sage-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-soft"
+                >
+                  🖨️ Print plan
                 </button>
               </div>
             </>
