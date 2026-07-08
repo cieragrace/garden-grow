@@ -62,6 +62,11 @@ export interface Plant {
    * return `null` indoor windows from `plantingWindows`.
    */
   startsIndoors: boolean;
+  /**
+   * Marks drought-tough / low-water edibles (the "water-wise" collection).
+   * Omitted (falsy) for crops with ordinary water needs.
+   */
+  waterWise?: boolean;
   /** Companion-planting friends & foes (ids of other plants in this dataset). */
   companions: Companions;
 }
@@ -123,7 +128,7 @@ export const plants: Plant[] = [
     zones: [3, 4, 5, 6, 7, 8, 9, 10, 11],
     startsIndoors: true,
     companions: {
-      friends: ["basil", "onion", "carrot"],
+      friends: ["basil", "onion", "carrot", "okra", "oregano"],
       foes: [],
     },
   },
@@ -144,7 +149,7 @@ export const plants: Plant[] = [
     zones: [3, 4, 5, 6, 7, 8, 9, 10],
     startsIndoors: false,
     companions: {
-      friends: ["tomato", "onion", "pea", "lettuce", "radish", "bell-pepper"],
+      friends: ["tomato", "onion", "pea", "lettuce", "radish", "bell-pepper", "sage"],
       foes: [],
     },
   },
@@ -249,8 +254,8 @@ export const plants: Plant[] = [
     zones: [3, 4, 5, 6, 7, 8, 9, 10, 11],
     startsIndoors: false,
     companions: {
-      friends: ["lettuce", "pea", "radish", "green-bean", "sweet-corn"],
-      foes: ["potato"],
+      friends: ["lettuce", "pea", "radish", "green-bean", "sweet-corn", "sunflower"],
+      foes: ["potato", "sage"],
     },
   },
   {
@@ -291,7 +296,7 @@ export const plants: Plant[] = [
     zones: [4, 5, 6, 7, 8, 9, 10],
     startsIndoors: false,
     companions: {
-      friends: ["sweet-corn", "green-bean"],
+      friends: ["sweet-corn", "green-bean", "tepary-bean"],
       foes: ["potato"],
     },
   },
@@ -313,7 +318,7 @@ export const plants: Plant[] = [
     startsIndoors: false,
     companions: {
       friends: ["sweet-corn", "winter-squash", "zucchini", "cucumber", "pea", "eggplant", "potato"],
-      foes: ["onion", "garlic", "beet", "swiss-chard"],
+      foes: ["onion", "garlic", "beet", "swiss-chard", "sunflower"],
     },
   },
   {
@@ -354,7 +359,7 @@ export const plants: Plant[] = [
     zones: [3, 4, 5, 6, 7, 8, 9, 10],
     startsIndoors: false,
     companions: {
-      friends: ["carrot", "lettuce", "cucumber", "pea", "spinach"],
+      friends: ["carrot", "lettuce", "cucumber", "pea", "spinach", "melon"],
       foes: [],
     },
   },
@@ -375,7 +380,7 @@ export const plants: Plant[] = [
     zones: [3, 4, 5, 6, 7, 8, 9],
     startsIndoors: true,
     companions: {
-      friends: ["beet", "onion", "garlic"],
+      friends: ["beet", "onion", "garlic", "sage", "thyme"],
       foes: ["tomato"],
     },
   },
@@ -418,7 +423,7 @@ export const plants: Plant[] = [
     startsIndoors: true,
     companions: {
       friends: ["tomato", "carrot", "beet", "lettuce", "broccoli", "cauliflower", "kale", "bell-pepper", "swiss-chard"],
-      foes: ["green-bean", "pea"],
+      foes: ["green-bean", "pea", "tepary-bean"],
     },
   },
   {
@@ -439,7 +444,7 @@ export const plants: Plant[] = [
     startsIndoors: false,
     companions: {
       friends: ["tomato", "beet", "broccoli", "cauliflower", "kale"],
-      foes: ["green-bean", "pea"],
+      foes: ["green-bean", "pea", "tepary-bean"],
     },
   },
   {
@@ -501,7 +506,7 @@ export const plants: Plant[] = [
     zones: [3, 4, 5, 6, 7, 8, 9, 10, 11],
     startsIndoors: false,
     companions: {
-      friends: ["green-bean", "winter-squash", "zucchini", "cucumber", "potato"],
+      friends: ["green-bean", "winter-squash", "zucchini", "cucumber", "potato", "tepary-bean", "amaranth", "melon"],
       foes: ["tomato"],
     },
   },
@@ -543,7 +548,7 @@ export const plants: Plant[] = [
     zones: [3, 4, 5, 6, 7, 8, 9, 10, 11],
     startsIndoors: true,
     companions: {
-      friends: ["green-bean", "basil", "pea"],
+      friends: ["green-bean", "basil", "pea", "okra"],
       foes: ["potato"],
     },
   },
@@ -565,7 +570,7 @@ export const plants: Plant[] = [
     startsIndoors: false,
     companions: {
       friends: ["green-bean", "sweet-corn"],
-      foes: ["tomato", "cucumber", "zucchini", "winter-squash", "eggplant"],
+      foes: ["tomato", "cucumber", "zucchini", "winter-squash", "eggplant", "sunflower", "melon"],
     },
   },
   {
@@ -586,6 +591,250 @@ export const plants: Plant[] = [
     startsIndoors: true,
     companions: {
       friends: ["tomato"],
+      foes: [],
+    },
+  },
+
+  // --- Water-wise / drought-tough edibles -------------------------------
+  {
+    id: "okra",
+    name: "Okra",
+    emoji: "🌶️",
+    category: "Vegetable",
+    description:
+      "A heat-and-drought champion that hits its stride when other crops wilt. Pick pods young and it keeps producing all summer.",
+    sun: "Full sun",
+    water: "0.5-1 inch / week",
+    rowSpacing: "36 in",
+    seedSpacing: "12-18 in",
+    plantingDepth: "Seeds ½–1 in deep; soak overnight, direct-sow after soil warms",
+    matureSize: "3–6 ft tall, 24 in wide",
+    growingDuration: "50-65 days",
+    zones: [5, 6, 7, 8, 9, 10, 11],
+    startsIndoors: false,
+    waterWise: true,
+    companions: {
+      friends: ["bell-pepper", "eggplant", "sweet-potato"],
+      foes: [],
+    },
+  },
+  {
+    id: "tepary-bean",
+    name: "Tepary Bean",
+    emoji: "🫘",
+    category: "Legume",
+    description:
+      "A desert heirloom grown in the Southwest for centuries — arguably the most drought-tolerant bean on earth. Water deeply, then leave it alone.",
+    sun: "Full sun",
+    water: "0.5 inch / week once established",
+    rowSpacing: "18-24 in",
+    seedSpacing: "4-6 in",
+    plantingDepth: "Seeds 1 in deep; direct-sow in warm soil",
+    matureSize: "Low bush or short vines, 18–24 in",
+    growingDuration: "60-90 days",
+    zones: [5, 6, 7, 8, 9, 10, 11],
+    startsIndoors: false,
+    waterWise: true,
+    companions: {
+      friends: ["sweet-corn", "winter-squash"],
+      foes: ["onion", "garlic"],
+    },
+  },
+  {
+    id: "amaranth",
+    name: "Amaranth",
+    emoji: "🌾",
+    category: "Leafy Green",
+    description:
+      "A two-for-one heat lover: tender leaves for the pan now, showy seed heads full of grain later. Thrives on neglect once it's up.",
+    sun: "Full sun",
+    water: "0.5-1 inch / week",
+    rowSpacing: "18-24 in",
+    seedSpacing: "6-12 in",
+    plantingDepth: "Seeds ⅛ in deep, barely covered; direct-sow after frost",
+    matureSize: "2–6 ft tall depending on variety",
+    growingDuration: "30-50 days for greens; 90+ for grain",
+    zones: [4, 5, 6, 7, 8, 9, 10, 11],
+    startsIndoors: false,
+    waterWise: true,
+    companions: {
+      friends: ["sweet-corn"],
+      foes: [],
+    },
+  },
+  {
+    id: "sunflower",
+    name: "Sunflower",
+    emoji: "🌻",
+    category: "Vegetable",
+    description:
+      "Snack seeds, pollinator magnet, and living trellis in one tall package. Deep taproots find water most crops can't reach.",
+    sun: "Full sun",
+    water: "0.5-1 inch / week",
+    rowSpacing: "30-36 in",
+    seedSpacing: "12-18 in",
+    plantingDepth: "Seeds 1 in deep; direct-sow after frost",
+    matureSize: "4–10 ft tall depending on variety",
+    growingDuration: "70-100 days",
+    zones: [3, 4, 5, 6, 7, 8, 9, 10, 11],
+    startsIndoors: false,
+    waterWise: true,
+    companions: {
+      friends: ["cucumber"],
+      foes: ["potato", "green-bean"],
+    },
+  },
+  {
+    id: "melon",
+    name: "Melon",
+    emoji: "🍈",
+    category: "Vegetable",
+    description:
+      "Cantaloupe and honeydew sweeten best when you ease off the water as fruit ripens — dry heat is their friend. Give the vines room to roam.",
+    sun: "Full sun",
+    water: "1 inch / week, tapering at ripening",
+    rowSpacing: "48-72 in",
+    seedSpacing: "24-36 in",
+    plantingDepth: "Seeds 1 in deep; transplant carefully without disturbing roots",
+    matureSize: "12–18 in tall, 4–8 ft sprawling vines",
+    growingDuration: "70-100 days",
+    zones: [4, 5, 6, 7, 8, 9, 10, 11],
+    startsIndoors: true,
+    waterWise: true,
+    companions: {
+      friends: ["sweet-corn", "radish"],
+      foes: ["potato"],
+    },
+  },
+  {
+    id: "sweet-potato",
+    name: "Sweet Potato",
+    emoji: "🍠",
+    category: "Root",
+    description:
+      "Plant slips in warm soil and let the vines smother weeds while tubers fatten below. Loves heat, shrugs off dry spells.",
+    sun: "Full sun",
+    water: "0.5-1 inch / week once established",
+    rowSpacing: "36-48 in",
+    seedSpacing: "12-18 in",
+    plantingDepth: "Slips (rooted sprouts) set 4 in deep; start slips indoors from a tuber",
+    matureSize: "12 in tall, vines sprawling 4–10 ft",
+    growingDuration: "90-120 days",
+    zones: [5, 6, 7, 8, 9, 10, 11],
+    startsIndoors: true,
+    waterWise: true,
+    companions: {
+      friends: ["okra"],
+      foes: [],
+    },
+  },
+  {
+    id: "rosemary",
+    name: "Rosemary",
+    emoji: "🌿",
+    category: "Herb",
+    description:
+      "A Mediterranean evergreen that would rather be too dry than too wet. One healthy plant seasons a whole year of roasts.",
+    sun: "Full sun",
+    water: "0.5 inch / week; let soil dry between",
+    rowSpacing: "24-36 in",
+    seedSpacing: "24 in",
+    plantingDepth: "Seeds ¼ in deep (slow); most gardeners start from a transplant",
+    matureSize: "2–4 ft tall shrub, 2–3 ft wide",
+    growingDuration: "80-100 days to first cuttings",
+    zones: [6, 7, 8, 9, 10, 11],
+    startsIndoors: true,
+    waterWise: true,
+    companions: {
+      friends: ["sage", "thyme", "lavender"],
+      foes: [],
+    },
+  },
+  {
+    id: "sage",
+    name: "Sage",
+    emoji: "🌿",
+    category: "Herb",
+    description:
+      "Soft gray-green leaves, tough-as-nails roots. A classic brassica bodyguard that asks for almost nothing once settled in.",
+    sun: "Full sun",
+    water: "0.5 inch / week; drought-tolerant when established",
+    rowSpacing: "24 in",
+    seedSpacing: "18-24 in",
+    plantingDepth: "Seeds ¼ in deep; set transplants at soil-line depth",
+    matureSize: "18–30 in tall, 24 in wide",
+    growingDuration: "75-90 days",
+    zones: [4, 5, 6, 7, 8, 9, 10],
+    startsIndoors: true,
+    waterWise: true,
+    companions: {
+      friends: ["rosemary", "thyme", "carrot", "broccoli"],
+      foes: ["cucumber"],
+    },
+  },
+  {
+    id: "thyme",
+    name: "Thyme",
+    emoji: "🌿",
+    category: "Herb",
+    description:
+      "A low, fragrant carpet that thrives in poor, dry soil where fussier herbs sulk. Shear it back and it just gets thicker.",
+    sun: "Full sun",
+    water: "0.5 inch / week; let soil dry between",
+    rowSpacing: "12-18 in",
+    seedSpacing: "8-12 in",
+    plantingDepth: "Seeds barely covered, ¼ in; germination is slow — transplants are easier",
+    matureSize: "6–12 in tall, 12–18 in spreading",
+    growingDuration: "80-95 days",
+    zones: [5, 6, 7, 8, 9, 10],
+    startsIndoors: true,
+    waterWise: true,
+    companions: {
+      friends: ["rosemary", "sage", "broccoli"],
+      foes: [],
+    },
+  },
+  {
+    id: "oregano",
+    name: "Oregano",
+    emoji: "🌿",
+    category: "Herb",
+    description:
+      "The pizza herb is happiest lean and dry — rich soil and heavy watering actually dull its flavor. A patch keeps giving for years.",
+    sun: "Full sun",
+    water: "0.5 inch / week; let soil dry between",
+    rowSpacing: "18 in",
+    seedSpacing: "8-12 in",
+    plantingDepth: "Seeds surface-sown, pressed in; or set transplants at soil-line depth",
+    matureSize: "12–24 in tall, 18 in spreading",
+    growingDuration: "80-90 days",
+    zones: [4, 5, 6, 7, 8, 9, 10],
+    startsIndoors: true,
+    waterWise: true,
+    companions: {
+      friends: ["bell-pepper"],
+      foes: [],
+    },
+  },
+  {
+    id: "lavender",
+    name: "Lavender",
+    emoji: "🪻",
+    category: "Herb",
+    description:
+      "Perfume for the garden and the pantry, built for gravelly soil and stingy watering. Overwatering is the only way to fail.",
+    sun: "Full sun",
+    water: "0.5 inch / week at most once established",
+    rowSpacing: "24-36 in",
+    seedSpacing: "24 in",
+    plantingDepth: "Seeds surface-sown and slow; most gardeners start from a transplant",
+    matureSize: "18–30 in tall, 24 in wide",
+    growingDuration: "90-110 days to first bloom",
+    zones: [5, 6, 7, 8, 9],
+    startsIndoors: true,
+    waterWise: true,
+    companions: {
+      friends: ["rosemary"],
       foes: [],
     },
   },
