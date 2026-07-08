@@ -28,7 +28,7 @@ import {
 } from "@/lib/bedLayout";
 import { plants as ALL_PLANTS, getPlantById } from "@/data/plants";
 import { useGarden } from "@/lib/useGarden";
-import { areFoes } from "@/lib/companions";
+import { areFoes, areFriends } from "@/lib/companions";
 import { readBedPlan, writeBedPlan } from "@/lib/bedPlan";
 import VeggieIcon from "@/components/VeggieIcon";
 
@@ -543,8 +543,61 @@ function BedReadout({
  * To-scale SVG diagram
  * ------------------------------------------------------------------------- */
 
+/** A hover/tap-focused plant's companion thread to a related neighbor. */
+type Thread = {
+  toKey: string;
+  toPlantId: string;
+  kind: "friend" | "foe";
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+};
+
+function placementKey(p: { plantId: string; instance: number }): string {
+  return `${p.plantId}-${p.instance}`;
+}
+
 function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
   const { bedWidthIn, bedLengthIn, placements } = layout;
+
+  // Hover (desktop) or tap (touch) focuses a plant: its circle highlights,
+  // companion threads draw to neighbors, and the inspector card fills in.
+  const [focusKey, setFocusKey] = useState<string | null>(null);
+  const focus = placements.find((p) => placementKey(p) === focusKey) ?? null;
+
+  /** Threads from the focused plant to the NEAREST instance of each related
+   *  species — nearest only, so a bed of qty-8 carrots isn't spaghetti. */
+  const threads = useMemo<Thread[]>(() => {
+    if (!focus) return [];
+    const best = new Map<string, { t: Thread; d2: number }>();
+    for (const q of placements) {
+      if (q.plantId === focus.plantId) continue;
+      const kind = areFoes(focus.plantId, q.plantId)
+        ? ("foe" as const)
+        : areFriends(focus.plantId, q.plantId)
+          ? ("friend" as const)
+          : null;
+      if (!kind) continue;
+      const d2 = (q.xIn - focus.xIn) ** 2 + (q.yIn - focus.yIn) ** 2;
+      const cur = best.get(q.plantId);
+      if (!cur || d2 < cur.d2) {
+        best.set(q.plantId, {
+          d2,
+          t: {
+            toKey: placementKey(q),
+            toPlantId: q.plantId,
+            kind,
+            x1: focus.xIn,
+            y1: focus.yIn,
+            x2: q.xIn,
+            y2: q.yIn,
+          },
+        });
+      }
+    }
+    return [...best.values()].map((v) => v.t);
+  }, [focus, placements]);
 
   // Compute a uniform px-per-inch scale that fits the bed inside the panel.
   const scale = useMemo(() => {
@@ -568,14 +621,19 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
 
   const ftPx = INCHES_PER_FOOT * scale;
 
+  const targetKeys = new Set(threads.map((t) => t.toKey));
+
   return (
-    <div className="overflow-x-auto rounded-xl border border-line bg-cream-deep p-4">
+    <div className="flex flex-col gap-3">
+      <BedInspector focus={focus} threads={threads} />
+      <div className="overflow-x-auto rounded-xl border border-line bg-cream-deep p-4">
       <svg
         viewBox={`0 0 ${svgW} ${svgH}`}
         width="100%"
         style={{ maxWidth: svgW, height: "auto", display: "block", margin: "0 auto" }}
         role="img"
         aria-label={`To-scale diagram of a ${widthFt} by ${lengthFt} foot bed with ${layout.placed} of ${layout.requested} plants placed.`}
+        onClick={() => setFocusKey(null)}
       >
         <defs>
           {/* Tiled soil speckle — deterministic texture, no randomness. */}
@@ -670,6 +728,35 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
             />
           ))}
 
+          {/* Companion threads from the focused plant: green arcs to friends,
+              rust dashed arcs to foes (nearest instance of each species). */}
+          {threads.map((t) => {
+            const x1 = t.x1 * scale;
+            const y1 = t.y1 * scale;
+            const x2 = t.x2 * scale;
+            const y2 = t.y2 * scale;
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const len = Math.hypot(dx, dy) || 1;
+            const off = Math.min(24, len * 0.18);
+            const cxp = (x1 + x2) / 2 - (dy / len) * off;
+            const cyp = (y1 + y2) / 2 + (dx / len) * off;
+            return (
+              <path
+                key={t.toKey}
+                className="gg-bed-thread"
+                d={`M ${x1} ${y1} Q ${cxp} ${cyp} ${x2} ${y2}`}
+                fill="none"
+                stroke={t.kind === "friend" ? "#4A7C59" : "#C5713A"}
+                strokeWidth={2}
+                strokeDasharray={t.kind === "foe" ? "5 4" : undefined}
+                strokeLinecap="round"
+                opacity={0.9}
+                pointerEvents="none"
+              />
+            );
+          })}
+
           {/* Plant footprints. Each spot's position lives in a CSS transform
               so layout reflows GLIDE (transition on .gg-bed-spot); each spot's
               content sprouts in on mount (.gg-bed-pop, staggered). Stable
@@ -681,11 +768,26 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
             const plant = getPlantById(p.plantId);
             // Icon roughly fills the circle but stays readable when tiny.
             const iconSize = Math.max(10, Math.min(r * 1.5, 40));
+            const key = placementKey(p);
+            const isFocus = key === focusKey;
+            const isTarget = targetKeys.has(key);
             return (
               <g
-                key={`${p.plantId}-${p.instance}`}
+                key={key}
                 className="gg-bed-spot"
-                style={{ transform: `translate(${cx}px, ${cy}px)` }}
+                style={{
+                  transform: `translate(${cx}px, ${cy}px)`,
+                  cursor: "pointer",
+                }}
+                onMouseEnter={() => setFocusKey(key)}
+                onMouseLeave={() =>
+                  setFocusKey((cur) => (cur === key ? null : cur))
+                }
+                onClick={(e) => {
+                  // Tap-to-inspect on touch; tap again (or the soil) to clear.
+                  e.stopPropagation();
+                  setFocusKey((cur) => (cur === key ? null : key));
+                }}
               >
                 {/* Native SVG tooltip: hover a circle to identify it. */}
                 <title>
@@ -700,9 +802,9 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
                     cy={0}
                     r={Math.max(r, 4)}
                     fill={p.fits ? "#D4E2CD" : "#F6D9C2"}
-                    fillOpacity={0.85}
-                    stroke={p.fits ? "#4A7C59" : "#C5713A"}
-                    strokeWidth={p.fits ? 1.5 : 2}
+                    fillOpacity={isFocus || isTarget ? 1 : 0.85}
+                    stroke={p.fits ? (isFocus ? "#2F6B3D" : "#4A7C59") : "#C5713A"}
+                    strokeWidth={isFocus || isTarget ? 3 : p.fits ? 1.5 : 2}
                     strokeDasharray={p.fits ? undefined : "4 3"}
                   />
                   {plant ? (
@@ -759,6 +861,63 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
           {formatFt(lengthFt)} ft
         </text>
       </svg>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * BedInspector — the readout for the hovered/tapped plant: identity, footprint,
+ * harvest time, and which bedmates it loves or clashes with. Fixed-position
+ * card (not a floating tooltip) so it works identically for mouse and touch.
+ */
+function BedInspector({
+  focus,
+  threads,
+}: {
+  focus: { plantId: string; diameterIn: number; fits: boolean } | null;
+  threads: Thread[];
+}) {
+  const plant = focus ? getPlantById(focus.plantId) : undefined;
+
+  if (!focus || !plant) {
+    return (
+      <p className="rounded-lg border border-dashed border-line px-3 py-2 text-xs text-soil-soft print:hidden">
+        Hover or tap a plant in the bed to inspect it.
+      </p>
+    );
+  }
+
+  const namesFor = (kind: "friend" | "foe") => [
+    ...new Set(
+      threads
+        .filter((t) => t.kind === kind)
+        .map((t) => getPlantById(t.toPlantId)?.name ?? t.toPlantId),
+    ),
+  ];
+  const friendNames = namesFor("friend");
+  const foeNames = namesFor("foe");
+
+  return (
+    <div
+      className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-sage bg-cream px-3 py-2 text-xs text-soil print:hidden"
+      aria-live="polite"
+    >
+      <span className="inline-flex items-center gap-1.5 font-medium">
+        <VeggieIcon emoji={plant.emoji} name={plant.name} size={20} />
+        {plant.name}
+      </span>
+      <span className="text-soil-soft">{focus.diameterIn}&Prime; footprint</span>
+      <span className="text-soil-soft">harvest in {plant.growingDuration}</span>
+      {friendNames.length > 0 ? (
+        <span className="text-leaf">♥ {friendNames.join(", ")}</span>
+      ) : null}
+      {foeNames.length > 0 ? (
+        <span className="text-carrot-deep">⚡ {foeNames.join(", ")}</span>
+      ) : null}
+      {!focus.fits ? (
+        <span className="font-medium text-carrot-deep">no room in bed</span>
+      ) : null}
     </div>
   );
 }
@@ -786,6 +945,8 @@ function Legend() {
       </span>
       <span>
         Each circle = the room a plant needs (row spacing); foes sit apart.
+        Hover one: <span className="text-leaf">green threads</span> = friends,{" "}
+        <span className="text-carrot-deep">rust dashes</span> = foes.
       </span>
     </div>
   );

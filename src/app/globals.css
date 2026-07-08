@@ -183,3 +183,21 @@ a {
     animation: none;
   }
 }
+
+/* Companion threads fade-draw in when a bed plant is focused. */
+.gg-bed-thread {
+  animation: gg-thread-in 0.25s ease-out both;
+}
+@keyframes gg-thread-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0.9;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gg-bed-thread {
+    animation: none;
+  }
+}
