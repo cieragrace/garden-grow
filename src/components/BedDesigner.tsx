@@ -18,7 +18,7 @@
  * input/quantity state.
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   layoutBed,
   parseSpacingInches,
@@ -28,6 +28,7 @@ import {
 import { plants as ALL_PLANTS, getPlantById } from "@/data/plants";
 import { useGarden } from "@/lib/useGarden";
 import { areFoes } from "@/lib/companions";
+import { readBedPlan, writeBedPlan } from "@/lib/bedPlan";
 import VeggieIcon from "@/components/VeggieIcon";
 
 /* ------------------------------------------------------------------------- *
@@ -87,21 +88,37 @@ type QtyMap = Record<string, number>;
 export default function BedDesigner() {
   const { saved } = useGarden();
 
-  // Bed dimensions, in FEET.
-  const [widthFt, setWidthFt] = useState(4);
-  const [lengthFt, setLengthFt] = useState(8);
+  // Bed dimensions, in FEET. Restored from the persisted plan when present.
+  const [widthFt, setWidthFt] = useState(() => {
+    const stored = readBedPlan();
+    return stored ? clampFt(stored.widthFt) : 4;
+  });
+  const [lengthFt, setLengthFt] = useState(() => {
+    const stored = readBedPlan();
+    return stored ? clampFt(stored.lengthFt) : 8;
+  });
 
-  // Plant quantities, keyed by plant id. INTENTIONALLY seeded from `saved` once
-  // on mount (lazy initializer) — after that, qty is user-owned local state and
-  // deliberately does NOT track later changes to `saved` (e.g. saving/removing
-  // plants from another tab while Bed stays mounted). This avoids clobbering the
-  // counts the user has hand-tuned here; the "Add my saved plants" button is the
-  // explicit, opt-in way to pull in newly-saved plants.
+  // Plant quantities, keyed by plant id. Restored from the persisted plan when
+  // one exists (even an intentionally-emptied one); otherwise INTENTIONALLY
+  // seeded from `saved` once on mount (lazy initializer) — after that, qty is
+  // user-owned local state and deliberately does NOT track later changes to
+  // `saved` (e.g. saving/removing plants from another tab while Bed stays
+  // mounted). This avoids clobbering the counts the user has hand-tuned here;
+  // the "Add my saved plants" button is the explicit, opt-in way to pull in
+  // newly-saved plants.
   const [qty, setQty] = useState<QtyMap>(() => {
+    const stored = readBedPlan();
+    if (stored) return stored.qty;
     const seed: QtyMap = {};
     for (const id of saved) seed[id] = 1;
     return seed;
   });
+
+  // Write-through persistence: the tuned plan survives refresh/tab close,
+  // matching how saved plants already behave.
+  useEffect(() => {
+    writeBedPlan({ widthFt, lengthFt, qty });
+  }, [widthFt, lengthFt, qty]);
 
   // The picker's currently-selected (not-yet-added) plant id.
   const [pickId, setPickId] = useState("");
