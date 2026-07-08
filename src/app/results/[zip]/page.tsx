@@ -3,9 +3,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { isValidZip, zoneForZip } from "@/lib/zones";
 import { plantsForZone } from "@/data/plants";
-import PlantCard from "@/components/PlantCard";
 import ZipForm from "@/components/ZipForm";
 import RememberZone from "./RememberZone";
+import ResultsGrid from "./ResultsGrid";
 
 interface PageProps {
   params: Promise<{ zip: string }>;
@@ -89,13 +89,7 @@ export default async function ResultsPage({ params }: PageProps) {
             </p>
           </div>
         ) : (
-          <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {plants.map((plant) => (
-              <li key={plant.id}>
-                <PlantCard plant={plant} zone={zone.zone} />
-              </li>
-            ))}
-          </ul>
+          <ResultsGrid plants={plants} zone={zone.zone} />
         )}
       </section>
     </div>
