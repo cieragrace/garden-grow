@@ -18,10 +18,10 @@ export { getPlantById };
 export type { Plant };
 
 /**
- * Module-level id → Plant index, built once from the static dataset. The
- * exported `getPlantById` is a plants.find() linear scan; companionReport does
- * O(n^2) foe/friend lookups, so routing those through this Map turns each
- * lookup from O(n) to O(1) (companionReport from ~O(n^3) to O(n^2)).
+ * Module-level id → Plant index, built once from the static dataset, so
+ * companionReport's O(n^2) foe/friend sweep does O(1) lookups. (data/plants'
+ * own getPlantById is also map-backed now; this local index just keeps the
+ * hot helpers below self-contained.)
  */
 const PLANT_BY_ID: Map<string, Plant> = new Map(plants.map((p) => [p.id, p]));
 

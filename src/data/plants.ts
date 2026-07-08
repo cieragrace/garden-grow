@@ -1052,9 +1052,13 @@ export function plantingWindows(plant: Plant, zone: number): PlantingWindows {
 
 /** Convenience lookup helpers. */
 
-/** Find a plant by its kebab-case id. */
+/** id → Plant index, built once — callers do per-render lookups (e.g. the bed
+ * diagram resolves one per placed circle), so keep this O(1). */
+const PLANT_INDEX: Map<string, Plant> = new Map(plants.map((p) => [p.id, p]));
+
+/** Find a plant by its kebab-case id (O(1)). */
 export function getPlantById(id: string): Plant | undefined {
-  return plants.find((p) => p.id === id);
+  return PLANT_INDEX.get(id);
 }
 
 /**
