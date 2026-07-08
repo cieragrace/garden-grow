@@ -857,11 +857,14 @@ export interface PlantingWindows {
 }
 
 /**
- * Clamp a month index into the valid 0–11 range and return its name.
+ * Wrap a month index around the year (…, -1 → Dec, 12 → Jan, …) and return
+ * its name. Wrapping (not clamping) keeps extreme-zone shifts honest: a
+ * zone-10 tomato really does start indoors in late fall, and clamping used to
+ * collapse such windows into a bogus "Jan – Jan".
  */
 function monthName(index: number): MonthName {
-  const clamped = Math.max(0, Math.min(11, index));
-  return MONTHS[clamped];
+  const wrapped = ((index % 12) + 12) % 12;
+  return MONTHS[wrapped];
 }
 
 /**
@@ -892,7 +895,7 @@ function zoneMonthOffset(zone: number): number {
 
 /**
  * Baseline (zone-6) planting windows per crop, expressed as month indices.
- * `plantingWindows` shifts these by the zone offset and clamps to Jan–Dec.
+ * `plantingWindows` shifts these by the zone offset, wrapping around the year.
  *
  * Each crop falls into one of a few archetypes:
  *  - warm-transplant : start indoors late winter, set out after frost (tomato, pepper…)
@@ -1023,7 +1026,16 @@ const DEFAULT_BASELINE: BaselineWindow = ARCHETYPES.coolDirect;
  */
 export function plantingWindows(plant: Plant, zone: number): PlantingWindows {
   const baseline = PLANT_ARCHETYPE[plant.id] ?? DEFAULT_BASELINE;
-  const offset = zoneMonthOffset(zone);
+  const springOffset = zoneMonthOffset(zone);
+
+  // Fall-planted crops (garlic) move the OPPOSITE direction: cold zones plant
+  // EARLIER in autumn (roots must establish before the ground freezes) and
+  // warm zones later. The effect is also gentler than the spring shift, so we
+  // invert and halve: zone 3 → Sep–Oct, zone 6 → Oct–Nov, zone 9 → Nov–Dec.
+  const offset =
+    baseline === ARCHETYPES.fallPlanted
+      ? -Math.round(springOffset / 2)
+      : springOffset;
 
   const shift = (index: number | null): MonthName | null =>
     index === null ? null : monthName(index + offset);
