@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { isValidZip, zoneForZip } from "@/lib/zones";
 import { plantsForZone } from "@/data/plants";
 import PlantCard from "@/components/PlantCard";
@@ -14,6 +15,9 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { zip } = await params;
+  // Garbage ZIPs must 404 (see the page component) — don't emit indexable
+  // "What to grow in xyz" metadata for them.
+  if (!isValidZip(zip)) notFound();
   return {
     title: `What to grow in ${zip}`,
     description: `Your USDA hardiness zone for ZIP ${zip} and the vegetables and herbs that grow best there.`,
@@ -29,25 +33,10 @@ export async function generateMetadata({
 export default async function ResultsPage({ params }: PageProps) {
   const { zip } = await params;
 
-  if (!isValidZip(zip)) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-center sm:px-6">
-        <div className="text-5xl" aria-hidden="true">
-          🤔
-        </div>
-        <h1 className="mt-4 text-3xl font-display">
-          That ZIP doesn&apos;t look right
-        </h1>
-        <p className="mt-3 text-soil-soft">
-          &ldquo;{zip}&rdquo; isn&apos;t a valid 5-digit US ZIP code. Try again
-          below.
-        </p>
-        <div className="mt-8 flex justify-center">
-          <ZipForm ctaLabel="Try again" />
-        </div>
-      </div>
-    );
-  }
+  // A malformed ZIP is a not-found, not a page: returning 200 here used to
+  // create indexable soft-404s for any garbage URL. The segment's
+  // not-found.tsx renders the friendly try-again UI with a real 404 status.
+  if (!isValidZip(zip)) notFound();
 
   // Non-null: zoneForZip only returns null for invalid zips, checked above.
   const zone = (await zoneForZip(zip))!;
