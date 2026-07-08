@@ -143,19 +143,24 @@ export function parseSpacingInches(spacing: string): number {
  * Map an area-used percentage (plus overflow) to a qualitative verdict.
  *
  * Thresholds (on areaUsedPct):
- *   < 70      → 'roomy'
- *   70  – 95  → 'snug'
- *   95  – 115 → 'cramped'
- *   > 115     → 'overcrowded'
+ *   < 55      → 'roomy'
+ *   55  – 70  → 'snug'
+ *   70  – 85  → 'cramped'
+ *   > 85      → 'overcrowded'
+ *
+ * Bands are calibrated to what circle packing can physically reach: identical
+ * circles on a square lattice cover ~78.5% of the floor and shelf packing of
+ * mixed sizes tops out below that, so demanding ~95%+ for 'cramped' (the old
+ * bands) made it unreachable — beds jumped straight from snug to overcrowded.
  *
  * Any overflow (a plant that didn't fit) forces 'overcrowded' regardless of the
  * percentage — if something spilled off the bed, it's overcrowded by definition.
  */
 function verdictFor(areaUsedPct: number, overflow: number): BedVerdict {
   if (overflow > 0) return "overcrowded";
-  if (areaUsedPct < 70) return "roomy";
-  if (areaUsedPct < 95) return "snug";
-  if (areaUsedPct <= 115) return "cramped";
+  if (areaUsedPct < 55) return "roomy";
+  if (areaUsedPct < 70) return "snug";
+  if (areaUsedPct <= 85) return "cramped";
   return "overcrowded";
 }
 
