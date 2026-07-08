@@ -127,6 +127,13 @@ export default function BedDesigner() {
   // Share feedback for the copy-link button.
   const [copied, setCopied] = useState(false);
 
+  // Free-typing drafts for the size inputs: the committed feet update live
+  // whenever the draft parses in-range, and clamping happens only on blur —
+  // so clearing the field or typing a two-digit value doesn't get snapped
+  // mid-keystroke by the controlled input.
+  const [widthDraft, setWidthDraft] = useState<string | null>(null);
+  const [lengthDraft, setLengthDraft] = useState<string | null>(null);
+
   // Write-through persistence: the tuned plan survives refresh/tab close,
   // matching how saved plants already behave.
   useEffect(() => {
@@ -256,10 +263,21 @@ export default function BedDesigner() {
                   min={1}
                   max={20}
                   step={1}
-                  value={widthFt}
-                  onChange={(e) =>
-                    setWidthFt(clampFt(Number(e.target.value)))
-                  }
+                  value={widthDraft ?? String(widthFt)}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setWidthDraft(raw);
+                    const n = Number(raw);
+                    if (raw !== "" && Number.isFinite(n) && n >= 1 && n <= 20) {
+                      setWidthFt(Math.round(n));
+                    }
+                  }}
+                  onBlur={() => {
+                    if (widthDraft !== null) {
+                      setWidthFt(clampFt(Number(widthDraft)));
+                      setWidthDraft(null);
+                    }
+                  }}
                   className="mt-1 w-full rounded-lg border border-line bg-cream px-3 py-2 text-soil focus:border-leaf focus:outline-none focus:ring-2 focus:ring-sage-soft"
                 />
               </label>
@@ -278,10 +296,21 @@ export default function BedDesigner() {
                   min={1}
                   max={20}
                   step={1}
-                  value={lengthFt}
-                  onChange={(e) =>
-                    setLengthFt(clampFt(Number(e.target.value)))
-                  }
+                  value={lengthDraft ?? String(lengthFt)}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setLengthDraft(raw);
+                    const n = Number(raw);
+                    if (raw !== "" && Number.isFinite(n) && n >= 1 && n <= 20) {
+                      setLengthFt(Math.round(n));
+                    }
+                  }}
+                  onBlur={() => {
+                    if (lengthDraft !== null) {
+                      setLengthFt(clampFt(Number(lengthDraft)));
+                      setLengthDraft(null);
+                    }
+                  }}
                   className="mt-1 w-full rounded-lg border border-line bg-cream px-3 py-2 text-soil focus:border-leaf focus:outline-none focus:ring-2 focus:ring-sage-soft"
                 />
               </label>
@@ -298,6 +327,8 @@ export default function BedDesigner() {
                     onClick={() => {
                       setWidthFt(p.widthFt);
                       setLengthFt(p.lengthFt);
+                      setWidthDraft(null);
+                      setLengthDraft(null);
                     }}
                     className={`rounded-full px-3 py-1 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-sage-soft ${
                       active
@@ -788,7 +819,7 @@ function EmptyState({
  * Helpers
  * ------------------------------------------------------------------------- */
 
-/** Clamp a feet input to a sensible 1–20 range, defaulting bad input to 4. */
+/** Clamp a feet value to the sensible 1–20 range (bad input floors to 1). */
 function clampFt(v: number): number {
   if (!Number.isFinite(v) || v < 1) return 1;
   return Math.min(Math.round(v), 20);
