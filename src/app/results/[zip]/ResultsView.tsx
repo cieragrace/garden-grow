@@ -2,24 +2,42 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { isValidZip, zoneForZip, type ZoneResult } from "@/lib/zones";
+import {
+  isValidZip,
+  zoneForZipInstant,
+  zoneForZipRefined,
+  type ZoneResult,
+} from "@/lib/zones";
 import { setLastZone } from "@/lib/lastZone";
 import { plantsForZone, type Plant } from "@/data/plants";
 import PlantCard from "@/components/PlantCard";
 import ZipForm from "@/components/ZipForm";
 
-type Status = "loading" | "invalid" | "ready";
+type Status = "invalid" | "ready";
 
 interface State {
   status: Status;
   zone: ZoneResult | null;
   plants: Plant[];
+  /** True while the background API refinement is still in flight. */
+  refining: boolean;
 }
 
+/**
+ * Fallback-first: the bundled zip3 table answers synchronously, so a valid ZIP
+ * renders real results on the very first paint (server render included) and
+ * the live-API refinement swaps in when/if it arrives.
+ */
 function initialState(zip: string): State {
-  return isValidZip(zip)
-    ? { status: "loading", zone: null, plants: [] }
-    : { status: "invalid", zone: null, plants: [] };
+  const instant = zoneForZipInstant(zip);
+  return instant
+    ? {
+        status: "ready",
+        zone: instant,
+        plants: plantsForZone(instant.zone),
+        refining: true,
+      }
+    : { status: "invalid", zone: null, plants: [], refining: false };
 }
 
 export default function ResultsView({ zip }: { zip: string }) {
@@ -39,23 +57,30 @@ export default function ResultsView({ zip }: { zip: string }) {
 
     let active = true;
 
-    zoneForZip(zip)
-      .then((result) => {
+    // Remember the instant answer as the user's home base right away; the
+    // refinement below overwrites it if the API disagrees.
+    const instant = zoneForZipInstant(zip);
+    if (instant) setLastZone({ zip, zone: instant.zone });
+
+    zoneForZipRefined(zip)
+      .then((refined) => {
         if (!active) return;
-        if (!result) {
-          setState({ status: "invalid", zone: null, plants: [] });
-          return;
+        if (refined) {
+          setLastZone({ zip, zone: refined.zone });
+          setState({
+            status: "ready",
+            zone: refined,
+            plants: plantsForZone(refined.zone),
+            refining: false,
+          });
+        } else {
+          // API unreachable — keep the instant fallback, stop the spinner note.
+          setState((s) => ({ ...s, refining: false }));
         }
-        // Remember this as the user's home base — only on a successful resolve.
-        setLastZone({ zip, zone: result.zone });
-        setState({
-          status: "ready",
-          zone: result,
-          plants: plantsForZone(result.zone),
-        });
       })
       .catch(() => {
-        if (active) setState({ status: "invalid", zone: null, plants: [] });
+        // zoneForZipRefined never rejects by contract; belt-and-suspenders.
+        if (active) setState((s) => ({ ...s, refining: false }));
       });
 
     return () => {
@@ -83,32 +108,8 @@ export default function ResultsView({ zip }: { zip: string }) {
     );
   }
 
-  if (state.status === "loading") {
-    return (
-      <div
-        className="mx-auto max-w-5xl px-4 py-16 sm:px-6"
-        aria-busy="true"
-        aria-live="polite"
-      >
-        <p className="text-center text-soil-soft">
-          Finding your hardiness zone for {zip}…
-        </p>
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {["skeleton-0", "skeleton-1", "skeleton-2", "skeleton-3", "skeleton-4", "skeleton-5"].map(
-            (key) => (
-              <div
-                key={key}
-                className="h-40 animate-pulse rounded-xl border border-line bg-cream-deep"
-              />
-            ),
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // ready
-  const { zone, plants } = state;
+  // ready — instantly from the bundled fallback, refined in the background.
+  const { zone, plants, refining } = state;
   const isFallback = zone?.source === "fallback";
 
   return (
@@ -121,7 +122,12 @@ export default function ResultsView({ zip }: { zip: string }) {
           <h1 className="mt-1 text-4xl font-display md:text-5xl">
             USDA {zone?.label}
           </h1>
-          {isFallback ? (
+          {isFallback && refining ? (
+            <p className="mt-2 text-sm text-soil-soft" aria-live="polite">
+              {plants.length} crop{plants.length === 1 ? "" : "s"} thrive in
+              your zone. Confirming your exact zone…
+            </p>
+          ) : isFallback ? (
             <p className="mt-2 max-w-md text-sm text-soil-soft">
               We couldn&apos;t reach the live zone service, so this is our
               best offline estimate. It&apos;s close enough to start planning —

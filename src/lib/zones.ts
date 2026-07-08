@@ -200,26 +200,48 @@ async function refineZoneFromApi(zip: string): Promise<number | null> {
 }
 
 /**
- * Resolve a zipcode to a USDA hardiness zone.
+ * SYNCHRONOUS zone resolution from the bundled approximate fallback table.
  *
- * Returns null only when the input is not a valid 5-digit zip. For any valid
- * zip this ALWAYS resolves instantly from the bundled approximate fallback,
- * then tries to refine that answer with the live API (short timeout). The
- * fallback-first ordering means results feel immediate and work fully offline.
+ * Returns null only when the input is not a valid 5-digit zip. This is the
+ * "instant" half of the fallback-first strategy: zero latency, fully offline,
+ * safe to call during render (pure and deterministic). Pair it with
+ * {@link zoneForZipRefined} to upgrade the answer when the network allows.
+ */
+export function zoneForZipInstant(zip: string): ZoneResult | null {
+  if (!isValidZip(zip)) return null;
+  const zone = fallbackZone(zip);
+  return { zone, label: `Zone ${zone} (approx.)`, source: 'fallback' };
+}
+
+/**
+ * Best-effort PRECISE zone resolution from the live phzmapi.org API.
+ *
+ * Resolves to an api-sourced ZoneResult, or null when the zip is invalid or
+ * the API can't answer within the short timeout. Never rejects. Callers show
+ * the instant fallback first and swap this in when it arrives.
+ */
+export async function zoneForZipRefined(
+  zip: string,
+): Promise<ZoneResult | null> {
+  if (!isValidZip(zip)) return null;
+  const refined = await refineZoneFromApi(zip);
+  if (refined === null) return null;
+  return { zone: refined, label: `Zone ${refined}`, source: 'api' };
+}
+
+/**
+ * Resolve a zipcode to the best available USDA hardiness zone: the API answer
+ * when reachable within the timeout, otherwise the instant fallback.
+ *
+ * Returns null only when the input is not a valid 5-digit zip. NOTE: this
+ * always waits on the network attempt, so interactive UIs should prefer
+ * {@link zoneForZipInstant} + {@link zoneForZipRefined} to avoid blocking on
+ * a ~1.2s timeout when offline; this combined form suits server-side callers.
  */
 export async function zoneForZip(
   zip: string,
 ): Promise<ZoneResult | null> {
-  if (!isValidZip(zip)) return null;
-
-  // 1. Instant, offline-safe fallback (always succeeds for a valid zip).
-  const fallback = fallbackZone(zip);
-
-  // 2. Best-effort refinement from the live API; keep the fallback on failure.
-  const refined = await refineZoneFromApi(zip);
-  if (refined !== null) {
-    return { zone: refined, label: `Zone ${refined}`, source: 'api' };
-  }
-
-  return { zone: fallback, label: `Zone ${fallback} (approx.)`, source: 'fallback' };
+  const instant = zoneForZipInstant(zip);
+  if (!instant) return null;
+  return (await zoneForZipRefined(zip)) ?? instant;
 }
