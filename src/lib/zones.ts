@@ -178,6 +178,7 @@ const FALLBACK_RANGES: PrefixRange[] = [
   { min: 840, max: 847, zone: 6 }, // 840–847 UT (4–8)
   { min: 850, max: 865, zone: 9 }, // 850–865 AZ (7–10, low-desert lean)
   { min: 870, max: 884, zone: 7 }, // 870–884 NM (5–8)
+  { min: 885, max: 885, zone: 8 }, // 885 El Paso TX (~8a; sits in the NM block)
   { min: 889, max: 898, zone: 8 }, // 889–898 NV (5–9, Vegas lean)
 
   // West Coast (8–10)
