@@ -10,11 +10,15 @@ import Link from "next/link";
 import { getPlantById } from "@/data/plants";
 import { useGarden } from "@/lib/useGarden";
 import { clearGarden } from "@/lib/garden";
+import { useLastZone } from "@/lib/useLastZone";
 import PlantCard from "@/components/PlantCard";
 import SaveButton from "@/components/SaveButton";
 
 export default function MyPlantsPanel() {
   const { saved } = useGarden();
+  // Carry the remembered zone into detail links so the calendar stays
+  // tailored instead of nagging for a ZIP the app already knows.
+  const lastZone = useLastZone();
 
   const plants = saved
     .map((id) => getPlantById(id))
@@ -65,6 +69,7 @@ export default function MyPlantsPanel() {
           <li key={plant.id}>
             <PlantCard
               plant={plant}
+              zone={lastZone?.zone}
               action={
                 <SaveButton
                   plantId={plant.id}
