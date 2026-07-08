@@ -201,3 +201,15 @@ a {
     animation: none;
   }
 }
+
+/* Season-scrubber growth: circles ease between sizes as you scrub. */
+.gg-bed-circle {
+  transition:
+    r 0.25s ease-out,
+    stroke 0.25s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .gg-bed-circle {
+    transition: none;
+  }
+}

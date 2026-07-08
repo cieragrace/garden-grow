@@ -26,7 +26,7 @@ import {
   type BedItem,
   type BedVerdict,
 } from "@/lib/bedLayout";
-import { plants as ALL_PLANTS, getPlantById } from "@/data/plants";
+import { plants as ALL_PLANTS, getPlantById, maturityDays } from "@/data/plants";
 import { useGarden } from "@/lib/useGarden";
 import { areFoes, areFriends } from "@/lib/companions";
 import { readBedPlan, writeBedPlan } from "@/lib/bedPlan";
@@ -129,6 +129,11 @@ export default function BedDesigner() {
   // Share feedback for the copy-link button.
   const [copied, setCopied] = useState(false);
 
+  // Season view: null = plants drawn at mature footprint (the default and the
+  // spacing-planning view). A number = "day N of the season" — circles shrink
+  // toward seedling size and grow back as you scrub.
+  const [seasonDay, setSeasonDay] = useState<number | null>(null);
+
   // Free-typing drafts for the size inputs: the committed feet update live
   // whenever the draft parses in-range, and clamping happens only on blur —
   // so clearing the field or typing a two-digit value doesn't get snapped
@@ -189,6 +194,25 @@ export default function BedDesigner() {
   );
 
   const hasPlants = planRows.length > 0;
+
+  /** Per-plant maturity (days) + season length for the scrubber. */
+  const maturityById = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const { plant } of planRows) m.set(plant.id, maturityDays(plant));
+    return m;
+  }, [planRows]);
+  const seasonMax = useMemo(
+    () => Math.max(30, ...[...maturityById.values()]),
+    [maturityById],
+  );
+  const readyCount = useMemo(() => {
+    if (seasonDay === null) return 0;
+    let n = 0;
+    for (const { plant, count } of planRows) {
+      if (seasonDay >= (maturityById.get(plant.id) ?? 60)) n += count;
+    }
+    return n;
+  }, [seasonDay, planRows, maturityById]);
 
   /* --- Mutators ---------------------------------------------------------- */
 
@@ -464,7 +488,50 @@ export default function BedDesigner() {
                 verdict={layout.verdict}
                 overflow={layout.overflow}
               />
-              <BedDiagram layout={layout} />
+              <div className="rounded-xl border border-line bg-cream-deep px-5 py-3 print:hidden">
+                <div className="flex flex-wrap items-center gap-3">
+                  <label
+                    htmlFor="season-scrubber"
+                    className="text-sm font-medium text-garden"
+                  >
+                    Season view
+                  </label>
+                  <span aria-hidden="true" className="text-sm">
+                    🌱
+                  </span>
+                  <input
+                    id="season-scrubber"
+                    type="range"
+                    min={0}
+                    max={seasonMax}
+                    step={1}
+                    value={seasonDay ?? seasonMax}
+                    onChange={(e) => {
+                      const v = Number(e.target.value);
+                      setSeasonDay(v >= seasonMax ? null : v);
+                    }}
+                    className="min-w-0 flex-1 accent-garden"
+                    aria-valuetext={
+                      seasonDay === null
+                        ? "Full grown"
+                        : `Day ${seasonDay} of ${seasonMax}`
+                    }
+                  />
+                  <span aria-hidden="true" className="text-sm">
+                    🌻
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-soil-soft" aria-live="polite">
+                  {seasonDay === null
+                    ? `Full grown (day ${seasonMax}) — drag back to watch the season unfold.`
+                    : `Day ${seasonDay} — ${readyCount}/${layout.requested} plants ready to harvest. Dashed rings show each plant's full-grown footprint.`}
+                </p>
+              </div>
+              <BedDiagram
+                layout={layout}
+                seasonDay={seasonDay}
+                maturityById={maturityById}
+              />
               <Legend />
               <FoeCallout foePairs={foePairs} />
               <div className="flex flex-wrap gap-2 print:hidden">
@@ -558,7 +625,16 @@ function placementKey(p: { plantId: string; instance: number }): string {
   return `${p.plantId}-${p.instance}`;
 }
 
-function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
+function BedDiagram({
+  layout,
+  seasonDay,
+  maturityById,
+}: {
+  layout: ReturnType<typeof layoutBed>;
+  /** Null = mature view; a number = "day N" of the season simulation. */
+  seasonDay: number | null;
+  maturityById: Map<string, number>;
+}) {
   const { bedWidthIn, bedLengthIn, placements } = layout;
 
   // Hover (desktop) or tap (touch) focuses a plant: its circle highlights,
@@ -766,11 +842,21 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
             const cy = p.yIn * scale;
             const r = (p.diameterIn / 2) * scale;
             const plant = getPlantById(p.plantId);
-            // Icon roughly fills the circle but stays readable when tiny.
-            const iconSize = Math.max(10, Math.min(r * 1.5, 40));
             const key = placementKey(p);
             const isFocus = key === focusKey;
             const isTarget = targetKeys.has(key);
+
+            // Season growth: sqrt eases the fast early growth; floor keeps
+            // seedlings visible. Ready plants get a golden harvest ring.
+            const maturity = maturityById.get(p.plantId) ?? 60;
+            const growth =
+              seasonDay === null
+                ? 1
+                : Math.max(0.12, Math.sqrt(Math.min(1, seasonDay / maturity)));
+            const drawnR = Math.max(4, r * growth);
+            const ready = seasonDay !== null && seasonDay >= maturity;
+            // Icon roughly fills the (current) circle, readable when tiny.
+            const iconSize = Math.max(8, Math.min(drawnR * 1.5, 40));
             return (
               <g
                 key={key}
@@ -797,14 +883,35 @@ function BedDiagram({ layout }: { layout: ReturnType<typeof layoutBed> }) {
                   className="gg-bed-pop"
                   style={{ animationDelay: `${Math.min(i * 45, 600)}ms` }}
                 >
+                  {/* Ghost of the full-grown footprint while mid-season. */}
+                  {growth < 1 ? (
+                    <circle
+                      cx={0}
+                      cy={0}
+                      r={Math.max(r, 4)}
+                      fill="none"
+                      stroke="rgba(247, 244, 236, 0.45)"
+                      strokeWidth={1}
+                      strokeDasharray="3 5"
+                    />
+                  ) : null}
                   <circle
+                    className="gg-bed-circle"
                     cx={0}
                     cy={0}
-                    r={Math.max(r, 4)}
+                    r={drawnR}
                     fill={p.fits ? "#D4E2CD" : "#F6D9C2"}
                     fillOpacity={isFocus || isTarget ? 1 : 0.85}
-                    stroke={p.fits ? (isFocus ? "#2F6B3D" : "#4A7C59") : "#C5713A"}
-                    strokeWidth={isFocus || isTarget ? 3 : p.fits ? 1.5 : 2}
+                    stroke={
+                      isFocus
+                        ? "#2F6B3D"
+                        : ready
+                          ? "#E08A4B"
+                          : p.fits
+                            ? "#4A7C59"
+                            : "#C5713A"
+                    }
+                    strokeWidth={isFocus || isTarget ? 3 : ready ? 2.5 : p.fits ? 1.5 : 2}
                     strokeDasharray={p.fits ? undefined : "4 3"}
                   />
                   {plant ? (

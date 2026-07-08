@@ -1062,6 +1062,17 @@ export function getPlantById(id: string): Plant | undefined {
 }
 
 /**
+ * Days to maturity for season simulations: the upper bound of the first range
+ * in `growingDuration` ("60-85 days" → 85, "22-35 days" → 35). Falls back to
+ * 60 if the string carries no number.
+ */
+export function maturityDays(plant: Plant): number {
+  const nums = plant.growingDuration.match(/\d+/g)?.map(Number) ?? [];
+  if (nums.length === 0) return 60;
+  return nums.length >= 2 ? nums[1] : nums[0];
+}
+
+/**
  * Zone used for crop matching. The dataset's `zones` arrays top out at 11, but
  * real lookups can return tropical zones 12–13 (Puerto Rico/USVI, Hawaii,
  * Guam). Anything a zone-11 gardener can grow, a zone-12/13 gardener can too,

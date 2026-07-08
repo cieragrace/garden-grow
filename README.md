@@ -15,7 +15,7 @@ A planting companion that turns your ZIP code into a USDA growing zone and tells
 | **ZIP → zone → plants** | Enter a ZIP code and get your USDA hardiness zone plus every crop in the 35-plant dataset that thrives there. Zone resolution is fallback-first: a bundled zip3 lookup answers instantly (fully offline-capable), then the live [phzmapi.org](https://phzmapi.org) API refines it. |
 | **Zone-shifted calendars** | Each plant's indoor-start / transplant / direct-sow windows shift by zone — earlier in warm zones, later in cold ones, wrapping the calendar year. Fall-planted crops (garlic) shift the opposite direction, the way real gardening works. |
 | **Companion planting** | Friends and foes for every plant, kept symmetric across the dataset, with links that preserve your zone context. |
-| **Bed Designer** | A to-scale, deterministic packing engine lays your saved plants into a bed as spacing-accurate circles — foes are separated to opposite ends, small plants backfill gaps beside big ones, and you get a roomy/snug/cramped verdict. |
+| **Bed Designer** | A to-scale, deterministic packing engine lays your saved plants into an illustrated raised bed as spacing-accurate circles — foes are separated to opposite ends, small plants backfill gaps beside big ones, and you get a roomy/snug/cramped verdict. Hover any plant for its companion threads, and scrub the **season view** to watch the bed grow from seedlings to harvest. |
 | **Water-wise collection** | Drought-tough edibles (tepary bean, okra, amaranth, Mediterranean herbs…) flagged for low-water gardens. |
 
 | Results by zone | Plant detail | Bed Designer |
