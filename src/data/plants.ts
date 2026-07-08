@@ -796,7 +796,18 @@ export function getPlantById(id: string): Plant | undefined {
   return plants.find((p) => p.id === id);
 }
 
-/** All plants that can be grown in the given USDA zone. */
+/**
+ * Zone used for crop matching. The dataset's `zones` arrays top out at 11, but
+ * real lookups can return tropical zones 12–13 (Puerto Rico/USVI, Hawaii,
+ * Guam). Anything a zone-11 gardener can grow, a zone-12/13 gardener can too,
+ * so tropical zones share the zone-11 crop list instead of matching nothing.
+ */
+export function matchableZone(zone: number): number {
+  return Math.min(zone, 11);
+}
+
+/** All plants that can be grown in the given USDA zone (see matchableZone). */
 export function plantsForZone(zone: number): Plant[] {
-  return plants.filter((p) => p.zones.includes(zone));
+  const match = matchableZone(zone);
+  return plants.filter((p) => p.zones.includes(match));
 }

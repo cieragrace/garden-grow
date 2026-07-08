@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getPlantById } from "@/data/plants";
+import { getPlantById, matchableZone } from "@/data/plants";
 import PlantCalendar from "@/components/PlantCalendar";
 import HowToPlant from "@/components/HowToPlant";
 import Companions from "@/components/Companions";
@@ -47,8 +47,9 @@ export default async function PlantPage({ params, searchParams }: PageProps) {
   const calendarZone = zone ?? 6;
   // Only treat the calendar as authoritative when an explicit zone is both
   // provided AND within this plant's recommended zones. Otherwise it's shown
-  // "for reference" with an inline note (see PlantCalendar).
-  const zoneInRange = zone == null || plant.zones.includes(zone);
+  // "for reference" with an inline note (see PlantCalendar). Tropical zones
+  // 12–13 count as in-range whenever zone 11 is (see matchableZone).
+  const zoneInRange = zone == null || plant.zones.includes(matchableZone(zone));
 
   const facts: { emoji: string; label: string; value: string }[] = [
     { emoji: "☀️", label: "Sun", value: plant.sun },
