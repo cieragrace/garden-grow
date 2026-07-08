@@ -184,6 +184,9 @@ async function refineZoneFromApi(zip: string): Promise<number | null> {
     const res = await fetch(`https://phzmapi.org/${zip}.json`, {
       signal: controller.signal,
       headers: { Accept: 'application/json' },
+      // Server-side (Next.js data cache): a ZIP's hardiness zone is stable,
+      // so cache each answer for a day. Browsers ignore this extra key.
+      next: { revalidate: 86400 },
     });
     if (!res.ok) return null;
     const data: unknown = await res.json();
